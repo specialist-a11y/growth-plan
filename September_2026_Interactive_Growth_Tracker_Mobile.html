@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>September 2026 Growth Tracker</title>
+<style>
+:root{--bg:#f6f1f8;--card:#fff;--ink:#302a39;--muted:#746b7c;--p:#5d477a;--p2:#8e72aa;--soft:#ebe2f2;--line:#ddd3e4;--ok:#dff2e5}*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:linear-gradient(135deg,#f6eff9,#fbf9fc);color:var(--ink)}.wrap{max-width:1180px;margin:auto;padding:24px}.hero{background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;border-radius:24px;padding:28px;box-shadow:0 12px 35px rgba(60,40,80,.15)}h1{margin:0 0 8px;font-size:clamp(28px,4vw,44px)}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:20px}.stat{background:#ffffff22;padding:14px;border-radius:15px}.stat b{display:block;font-size:24px;margin-top:5px}.tabs,.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0}.tab,.btn{border:0;border-radius:999px;padding:10px 15px;font-weight:800;cursor:pointer}.tab{background:var(--soft);color:var(--p)}.tab.active,.btn.primary{background:var(--p);color:#fff}.btn{background:var(--soft);color:var(--p)}.panel{display:none}.panel.active{display:block}.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}.dow{text-align:center;font-size:12px;font-weight:800;color:var(--muted)}.day{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;min-height:150px;cursor:pointer;box-shadow:0 8px 22px rgba(60,40,80,.08)}.day.empty{background:transparent;border:0;box-shadow:none;cursor:default}.num{font-size:21px;font-weight:900}.meta{font-size:12px;color:var(--muted);line-height:1.45;margin-top:8px}.pill{display:inline-block;background:var(--soft);color:var(--p);padding:4px 8px;border-radius:999px;font-size:11px;font-weight:800;margin-top:8px}.progress{height:8px;background:#eee8f2;border-radius:999px;overflow:hidden;margin-top:10px}.bar{height:100%;background:linear-gradient(90deg,var(--p),var(--p2));width:0}.section{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:18px}.checkgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.item{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:13px;padding:11px}.item label{font-weight:750}.books{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}.book{background:#fff;border:1px solid var(--line);border-radius:15px;padding:14px}.tiny{font-size:12px;color:var(--muted)}select,input[type=number],textarea{border:1px solid var(--line);border-radius:10px;padding:8px;background:#fff;color:var(--ink)}textarea{width:100%;min-height:85px}.modal{position:fixed;inset:0;background:#241b2f88;display:none;align-items:center;justify-content:center;padding:20px}.modal.open{display:flex}.modal-card{width:min(720px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:20px;padding:22px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px}.close{border:0;background:var(--soft);border-radius:10px;padding:8px 11px;font-weight:800;cursor:pointer}@media(max-width:900px){.stats{grid-template-columns:1fr 1fr}.books{grid-template-columns:1fr 1fr}.calendar{grid-template-columns:1fr 1fr}.dow{display:none}}@media(max-width:560px){.calendar,.books,.checkgrid{grid-template-columns:1fr}}
+
+/* ===== Mobile optimization layer ===== */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;scroll-behavior:smooth}
+body{min-width:0;overflow-x:hidden}
+img,svg,canvas{max-width:100%;height:auto}
+button,input,select,textarea{max-width:100%;font-size:16px}
+button,.tab,.action,.btn,.close{min-height:44px;touch-action:manipulation}
+input[type="checkbox"]{width:22px;height:22px;min-width:22px}
+input[type="number"],input[type="email"],input[type="password"],select,textarea{width:100%}
+.day,.section,.book,.chartbox,.stat,.akpi,.weekcard{overflow-wrap:anywhere}
+.modal-card{-webkit-overflow-scrolling:touch}
+.tabs{overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;padding-bottom:4px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs .tab{flex:0 0 auto;white-space:nowrap}
+.controls,.toolbar{align-items:stretch}
+.controls>*{max-width:100%}
+
+@media(max-width:900px){
+  .wrap{padding:16px}
+  .hero{padding:22px;border-radius:20px}
+  .heroTop{gap:12px}
+  .calendar{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .day{min-height:0}
+  .books{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .checkgrid{grid-template-columns:1fr}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .authgrid{grid-template-columns:1fr}
+}
+
+@media(max-width:600px){
+  .wrap{padding:10px}
+  .hero{padding:18px;border-radius:16px}
+  .hero h1,h1{font-size:clamp(26px,9vw,36px);line-height:1.08}
+  .hero p{font-size:14px;line-height:1.45}
+  .stats{gap:8px;margin-top:14px}
+  .stat{padding:11px;border-radius:13px}
+  .stat b{font-size:20px}
+  .tabs{margin:14px -2px 16px;padding:0 2px 5px}
+  .tab,.action,.btn{padding:10px 13px}
+  .toolbar,.controls{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .toolbar .primary,.controls .primary{grid-column:auto}
+  .month,.controls input,.controls button{width:100%}
+  .calendar{grid-template-columns:1fr;gap:8px}
+  .dow{display:none}
+  .day{padding:14px;border-radius:14px}
+  .num{font-size:22px}
+  .meta{font-size:13px}
+  .books{grid-template-columns:1fr}
+  .book{padding:14px}
+  .section{padding:14px;border-radius:16px}
+  .checkgrid{grid-template-columns:1fr}
+  .item{align-items:flex-start;padding:12px}
+  .item label{line-height:1.35}
+  .modal{padding:8px;align-items:flex-end}
+  .modal-card{width:100%;max-height:92dvh;border-radius:20px 20px 0 0;padding:16px}
+  .modalTop,.top{align-items:flex-start}
+  textarea{min-height:110px}
+  .cloud{width:100%}
+  .analytics-grid{grid-template-columns:1fr}
+  .analytics-kpis{grid-template-columns:1fr 1fr}
+  .weekgrid{grid-template-columns:1fr 1fr}
+  .habitrow{grid-template-columns:110px minmax(0,1fr) 42px;gap:8px}
+  .linechart{height:220px}
+}
+
+@media(max-width:390px){
+  .stats{grid-template-columns:1fr}
+  .toolbar,.controls{grid-template-columns:1fr}
+  .analytics-kpis,.weekgrid{grid-template-columns:1fr}
+  .habitrow{grid-template-columns:1fr}
+  .habitrow b{text-align:right}
+}
+
+</style>
+</head>
+<body><div class="wrap">
+<div class="hero"><h1>September 2026 Growth Tracker</h1><p>Track your daily mindset, learning, business, wellness and exercise.</p><div class="stats"><div class="stat">Average completion<b id="avg">0%</b></div><div class="stat">Perfect days<b id="perfect">0</b></div><div class="stat">Exercise sessions<b id="excount">0</b></div><div class="stat">Water goal days<b id="waterdays">0</b></div></div></div>
+<div class="tabs"><button class="tab active" data-tab="calPanel">Calendar</button><button class="tab" data-tab="dailyPanel">Daily Tracker</button><button class="tab" data-tab="booksPanel">Audiobooks</button><button class="tab" data-tab="goalsPanel">Monthly Intentions</button></div>
+<section id="calPanel" class="panel active"><div class="toolbar"><button class="btn primary" onclick="openToday()">Open Today</button><button class="btn" onclick="exportData()">Export Progress</button><button class="btn" onclick="resetMonth()">Reset Month</button></div><div id="calendar" class="calendar"></div></section>
+<section id="dailyPanel" class="panel"><div class="section"><h2>Choose a day</h2><select id="daySelect"></select></div><div id="dailyEditor"></div></section>
+<section id="booksPanel" class="panel"><div class="section"><h2>Weekly Audiobooks</h2><div class="books"><div class="book"><small>Week 1</small><h3>Think and Grow Rich</h3><div>Napoleon Hill</div><p class="tiny">Wealth, goals and persistence.</p></div><div class="book"><small>Week 2</small><h3>The Game of Life and How to Play It</h3><div>Florence Scovel Shinn</div><p class="tiny">Manifestation, faith, abundance and mindset.</p></div><div class="book"><small>Week 3</small><h3>The Psychology of Money</h3><div>Morgan Housel</div><p class="tiny">Money mindset and long-term behavior.</p></div><div class="book"><small>Week 4</small><h3>Breaking the Habit of Being Yourself</h3><div>Joe Dispenza</div><p class="tiny">Mindset, meditation and visualization.</p></div><div class="book"><small>Week 5</small><h3>The Seven Spiritual Laws of Success</h3><div>Deepak Chopra</div><p class="tiny">Intention, spirituality and abundance.</p></div></div></div></section>
+<section id="goalsPanel" class="panel"><div class="section"><h2>Monthly Intentions</h2><p class="tiny">Saved automatically on this device.</p><label>My main wealth/business goal</label><textarea id="g1"></textarea><label>AI/marketing skill I want to improve most</label><textarea id="g2"></textarea><label>Creative project I want to complete</label><textarea id="g3"></textarea><label>Health goal for September</label><textarea id="g4"></textarea><label>What I want to feel more of this month</label><textarea id="g5"></textarea></div></section>
+</div>
+<div id="modal" class="modal"><div class="modal-card"><div class="top"><div><h2 id="mTitle" style="margin:0"></h2><div id="mSub" class="tiny"></div></div><button class="close" onclick="closeModal()">Close</button></div><div id="mBody" style="margin-top:16px"></div></div></div>
+<script>
+const themes={0:['Love','AI'],1:['Wealth','Marketing'],2:['Health','AI'],3:['Love','Drawing / Creative'],4:['Health','AI'],5:['Peace','Drawing'],6:['Wealth','Marketing']};
+const exercise={1:'Legs',4:'15-min movement',7:'15-min movement',10:'15-min movement',13:'Hands / arms',16:'15-min movement',19:'15-min movement',22:'15-min movement',25:'15-min movement',28:'15-min movement'};
+const books=['Think and Grow Rich','The Game of Life and How to Play It','The Psychology of Money','Breaking the Habit of Being Yourself','The Seven Spiritual Laws of Success'];
+const habits=['Meditate 15 min','Audiobook 1 hr','Skill 1 hr','Affirmations 10 min','Visualize 10 min','Business 1 hr','Supplements'];
+const KEY='sept2026-growth-tracker-v1';let data=JSON.parse(localStorage.getItem(KEY)||'{}');
+function ddata(day){if(!data[day])data[day]={habits:{},water:0,exercise:exercise[day]?'No':'N/A',notes:''};return data[day]}
+function save(){localStorage.setItem(KEY,JSON.stringify(data));renderStats();renderCalendar()}
+function bookIdx(d){return d<=6?0:d<=13?1:d<=20?2:d<=27?3:4}
+function pct(day){const d=ddata(day);let done=habits.filter(h=>d.habits[h]).length+(d.water>=8?1:0),total=8;if(exercise[day]){total++;if(d.exercise==='Yes')done++}return Math.round(done/total*100)}
+function renderCalendar(){const el=document.getElementById('calendar');el.innerHTML='';['MON','TUE','WED','THU','FRI','SAT','SUN'].forEach(x=>el.insertAdjacentHTML('beforeend',`<div class="dow">${x}</div>`));const first=(new Date(2026,8,1).getDay()+6)%7;for(let i=0;i<first;i++)el.insertAdjacentHTML('beforeend','<div class="day empty"></div>');for(let day=1;day<=30;day++){const w=new Date(2026,8,day).getDay(),[theme,skill]=themes[w],p=pct(day);el.insertAdjacentHTML('beforeend',`<div class="day" onclick="openDay(${day})"><div class="num">${day}</div><div class="meta"><b>Meditation:</b> ${theme}<br><b>Skill:</b> ${skill}</div>${exercise[day]?`<span class="pill">Exercise: ${exercise[day]}</span>`:''}<div class="meta"><b>Book:</b> ${books[bookIdx(day)]}</div><div class="progress"><div class="bar" style="width:${p}%"></div></div><div class="tiny" style="margin-top:5px">${p}% complete</div></div>`)} }
+function editor(day){const d=ddata(day),w=new Date(2026,8,day).getDay(),[theme,skill]=themes[w];let items=habits.map(h=>`<div class="item"><label>${h}</label><input type="checkbox" ${d.habits[h]?'checked':''} onchange="setHabit(${day},'${h}',this.checked)"></div>`).join('');items+=`<div class="item"><label>Water — 8 glasses</label><input type="number" min="0" max="20" value="${d.water}" onchange="setWater(${day},this.value)"></div>`;if(exercise[day])items+=`<div class="item"><label>Exercise — ${exercise[day]}</label><select onchange="setEx(${day},this.value)"><option ${d.exercise==='No'?'selected':''}>No</option><option ${d.exercise==='Yes'?'selected':''}>Yes</option></select></div>`;return `<div class="section"><h2>September ${day} • ${new Date(2026,8,day).toLocaleDateString('en-US',{weekday:'long'})}</h2><p><b>Meditation theme:</b> ${theme} &nbsp; • &nbsp; <b>Skill focus:</b> ${skill}</p><p><b>Audiobook:</b> ${books[bookIdx(day)]}</p><div class="checkgrid">${items}</div><div class="progress" style="margin-top:16px"><div class="bar" style="width:${pct(day)}%"></div></div><p><b>${pct(day)}% complete</b></p><label>Daily notes / reflection</label><textarea onchange="setNotes(${day},this.value)">${d.notes||''}</textarea></div>`}
+function setHabit(day,h,v){ddata(day).habits[h]=v;save();refresh(day)}function setWater(day,v){ddata(day).water=Math.max(0,Number(v)||0);save();refresh(day)}function setEx(day,v){ddata(day).exercise=v;save();refresh(day)}function setNotes(day,v){ddata(day).notes=v;save()}
+function refresh(day){if(document.getElementById('dailyEditor').dataset.day==day)showEditor(day);if(document.getElementById('modal').classList.contains('open')&&+document.getElementById('modal').dataset.day===day)openDay(day)}
+function showEditor(day){const e=document.getElementById('dailyEditor');e.dataset.day=day;e.innerHTML=editor(day)}function openDay(day){modal.dataset.day=day;mTitle.textContent='September '+day;mSub.textContent=pct(day)+'% complete';mBody.innerHTML=editor(day);modal.classList.add('open')}function closeModal(){modal.classList.remove('open')}
+function openToday(){const n=new Date(),day=(n.getFullYear()==2026&&n.getMonth()==8)?n.getDate():1;openDay(day)}
+function renderStats(){const ps=Array.from({length:30},(_,i)=>pct(i+1));avg.textContent=Math.round(ps.reduce((a,b)=>a+b,0)/30)+'%';perfect.textContent=ps.filter(x=>x===100).length;excount.textContent=Object.keys(exercise).filter(x=>ddata(+x).exercise==='Yes').length;waterdays.textContent=Array.from({length:30},(_,i)=>ddata(i+1).water>=8).filter(Boolean).length}
+function exportData(){const b=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='September_2026_Growth_Progress.json';a.click();URL.revokeObjectURL(a.href)}function resetMonth(){if(confirm('Reset all September progress?')){data={};save();showEditor(+daySelect.value||1)}}
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById(b.dataset.tab).classList.add('active')});
+for(let d=1;d<=30;d++){const o=document.createElement('option');o.value=d;o.textContent='September '+d;daySelect.appendChild(o)}daySelect.onchange=()=>showEditor(+daySelect.value);['g1','g2','g3','g4','g5'].forEach(id=>{const e=document.getElementById(id);e.value=localStorage.getItem(KEY+'-'+id)||'';e.oninput=()=>localStorage.setItem(KEY+'-'+id,e.value)});renderCalendar();renderStats();showEditor(1);
+</script></body></html>
