@@ -1025,13 +1025,13 @@ textarea:focus {
     <div id="authBox" style="margin-top:14px">
       <div style="background:#f0f9ff; border:1px solid #bae6fd; padding:14px; border-radius:16px; margin-bottom:14px;">
         <b style="color:#0369a1; font-size:14px;">⚡ Sign In or Create Account:</b>
-        <div style="font-size:13px; color:#334155; margin-top:4px;">Enter your email and password below to log in or create a new account.</div>
+        <div style="font-size:13px; color:#334155; margin-top:4px;">Enter your email and password below. If you don't have an account yet, enter your email and click <b>✨ Create Account</b> first!</div>
       </div>
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
         <div>
           <label style="font-weight:700; font-size:13px;">Email Address</label>
-          <input id="authEmail" type="email" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="name@example.com" />
+          <input id="authEmail" type="email" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="name@gmail.com" />
         </div>
         <div>
           <label style="font-weight:700; font-size:13px;">Password</label>
@@ -1043,9 +1043,13 @@ textarea:focus {
         <button class="action primary" style="flex:1;" onclick="signIn()">🔑 Sign In</button>
         <button class="action ghost" style="flex:1;" onclick="signUp()">✨ Create Account</button>
       </div>
+
+      <button class="action ghost" style="width:100%; margin-top:12px; background:#f0f9ff; color:#0369a1; border-color:#bae6fd; font-weight:700;" onclick="loginAsGuest()">
+        👤 Continue as Local Profile (No Email Needed)
+      </button>
     </div>
 
-    <div id="authMessage" class="notice" style="display:none"></div>
+    <div id="authMessage" class="notice" style="display:none; margin-top:14px;"></div>
 
     <details style="margin-top:20px; font-size:13px; color:var(--muted); border-top:1px solid var(--border); padding-top:12px;">
       <summary style="cursor:pointer; font-weight:700; color:#334155;">🛠️ Advanced Cloud Settings (Supabase)</summary>
@@ -1915,44 +1919,89 @@ async function saveSupabaseConfig() {
 
 function authMsg(t, ok = false) {
   const e = document.getElementById('authMessage');
+  if (!e) return;
   e.style.display = 'block';
   e.className = 'notice' + (ok ? ' good' : '');
-  e.textContent = t;
+  e.innerHTML = t;
 }
 
 async function signIn() {
-  if (!sb) return authMsg('Save connection first.');
+  if (!sb) return authMsg('⚠️ Database connection unavailable. You can use <b>Local Profile Mode</b> below!');
   const email = document.getElementById('authEmail').value.trim();
   const password = document.getElementById('authPassword').value;
-  if (!email || !password) return authMsg('Enter both email & password to sign in.');
+  if (!email || !password) return authMsg('⚠️ Please enter both email and password.');
+
+  authMsg('⌛ Signing in...', true);
   const { data, error } = await sb.auth.signInWithPassword({ email, password });
-  if (error) return authMsg(error.message);
+  
+  if (error) {
+    let msg = error.message;
+    if (msg.toLowerCase().includes('invalid login credentials')) {
+      msg = '<b>Invalid email or password.</b><br>If you haven\'t created an account yet, click <b>✨ Create Account</b> first!';
+    } else if (msg.toLowerCase().includes('email not confirmed')) {
+      msg = '<b>📧 Email not confirmed yet!</b><br>Please check your email inbox to click the confirmation link, or click <b>👤 Continue as Local Profile</b> below to start immediately.';
+    }
+    return authMsg('⚠️ ' + msg);
+  }
+
   session = data.session;
-  authMsg(`🟢 Welcome back! Signed in as ${session.user.email}`, true);
+  localStorage.removeItem('teen-guest-profile');
+  authMsg(`🟢 Welcome back! Signed in as <b>${session.user.email}</b>`, true);
+  updateAuthUI();
   await loadCloud();
 }
 
 async function signUp() {
-  if (!sb) return authMsg('Save connection first.');
+  if (!sb) return authMsg('⚠️ Database connection unavailable. You can use <b>Local Profile Mode</b> below!');
   const email = document.getElementById('authEmail').value.trim();
   const password = document.getElementById('authPassword').value;
-  if (!email || !password) return authMsg('Enter both email & password to create account.');
+  if (!email || !password) return authMsg('⚠️ Please enter both email and password to create an account.');
+
+  authMsg('⌛ Creating account...', true);
   const { data, error } = await sb.auth.signUp({ email, password });
-  if (error) return authMsg(error.message);
+  
+  if (error) {
+    let msg = error.message;
+    if (msg.toLowerCase().includes('invalid') && msg.toLowerCase().includes('email')) {
+      msg = 'Please enter a valid email address (e.g. <b>yourname@gmail.com</b>).';
+    }
+    return authMsg('⚠️ ' + msg);
+  }
+
   if (data.session) {
     session = data.session;
-    authMsg('Account created & signed in! Cloud syncing is active.', true);
+    localStorage.removeItem('teen-guest-profile');
+    authMsg('🎉 Account created & signed in! Routine progress is syncing to cloud.', true);
+    updateAuthUI();
     await loadCloud();
   } else {
-    authMsg('Account created! Check your email to confirm or try signing in.', true);
+    authMsg('📧 <b>Account created!</b> A confirmation email was sent to <b>' + email + '</b>.<br>Please check your inbox, or click <b>👤 Continue as Local Profile</b> below to use the tracker right away!', true);
   }
 }
 
-async function signOut() {
-  if (sb) await sb.auth.signOut();
-  session = null;
-  authMsg('Signed out.', true);
+function loginAsGuest() {
+  const currentGuest = localStorage.getItem('teen-guest-profile') || '1GAMMA Student';
+  const name = prompt("Enter Student Profile Name:", currentGuest) || currentGuest;
+  localStorage.setItem('teen-guest-profile', name);
+  session = { user: { email: `${name} (Local Profile)` } };
   updateAuthUI();
+  authMsg(`🟢 Logged in as <b>${name}</b> (Saved on this device)`, true);
+}
+
+async function signOut() {
+  if (sb && session && !session.user.email.includes('(Local Profile)')) {
+    await sb.auth.signOut();
+  }
+  session = null;
+  localStorage.removeItem('teen-guest-profile');
+  authMsg('Signed out. Local data will remain saved on this device.', true);
+  updateAuthUI();
+}
+
+// Check saved local profile on boot
+const savedGuest = localStorage.getItem('teen-guest-profile');
+if (savedGuest) {
+  session = { user: { email: `${savedGuest} (Local Profile)` } };
 }
 
 // Initial Load
