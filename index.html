@@ -1411,8 +1411,8 @@ function renderCalendar() {
             <div style="font-size:12px">${ratingStars}</div>
           </div>
           ${isHair ? '<span class="badge-tag badge-hair">💇‍♀️ Wash Hair Day</span>' : ''}
-          ${daySched ? `<span class="badge-tag" style="background:#e0f2fe; color:#0369a1;">🏫 1GAMMA: ${daySched.dayName}</span>' : ''}
-          ${isWeekend ? `<span class="badge-tag" style="background:#fef3c7; color:#92400e;">🗓️ Weekend Deep Clean</span>' : ''}
+          ${daySched ? '<span class="badge-tag" style="background:#e0f2fe; color:#0369a1;">🏫 1GAMMA: ' + daySched.dayName + '</span>' : ''}
+          ${isWeekend ? '<span class="badge-tag" style="background:#fef3c7; color:#92400e;">🗓️ Weekend Deep Clean</span>' : ''}
           <div class="meta" style="margin-top:6px;">
             ${isWeekend ? `
               <b>Room Tidy:</b> ${weekendTidyDone ? '✅ Spotless' : '⏳ Pending'}<br>
