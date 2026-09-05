@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>My Growth Tracker (Adult)</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#f7f3fa;--card:#fff;--ink:#2f2a39;--muted:#716879;--primary:#5a4578;--primary2:#8b6fa8;--accent:#ece3f2;--border:#ded5e5;--good:#dff4e5;--shadow:0 10px 28px rgba(70,50,90,.10)}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:linear-gradient(135deg,#f6effa,#fbf8fc);color:var(--ink)}
+.wrap{max-width:1200px;margin:auto;padding:24px}.hero{background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;border-radius:24px;padding:26px;box-shadow:var(--shadow)}
+.heroTop{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap}.hero h1{margin:0 0 7px;font-size:clamp(28px,4vw,44px)}.hero p{margin:0;opacity:.92}
+.cloud{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);padding:10px 13px;border-radius:14px;font-size:13px;transition:.2s}.cloud.active{background:rgba(46,204,113,.28);border-color:rgba(46,204,113,.6);color:#fff;font-weight:700;box-shadow:0 0 16px rgba(46,204,113,.35)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:20px}.stat{background:rgba(255,255,255,.14);padding:14px;border-radius:16px}.stat b{display:block;font-size:24px;margin-top:4px}
+.controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:20px 0}.controls input,.controls button,.tab,select,input[type=number],input[type=email],input[type=password]{border:1px solid var(--border);border-radius:12px;padding:10px 12px;font:inherit}.controls button,.tab,.action{cursor:pointer;font-weight:800}.month{background:#fff}.action{border:0;border-radius:12px;padding:10px 14px}.primary{background:var(--primary);color:#fff}.ghost{background:#eee7f3;color:var(--primary)}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}.tab{background:#eee7f3;color:var(--primary);border:0}.tab.active{background:var(--primary);color:#fff}.panel{display:none}.panel.active{display:block}
+.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}.dow{font-size:12px;font-weight:800;color:var(--muted);text-align:center;padding:8px}.day{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px;min-height:148px;box-shadow:var(--shadow);cursor:pointer;transition:.18s}.day:hover{transform:translateY(-2px)}.day.empty{background:transparent;border:none;box-shadow:none;cursor:default}.num{font-size:20px;font-weight:800}.meta,.tiny{font-size:12px;color:var(--muted);line-height:1.45}.pill{display:inline-block;background:#f0e9f5;color:#674d84;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:700;margin-top:7px}.progress{height:8px;background:#ece5f1;border-radius:999px;overflow:hidden;margin-top:10px}.bar{height:100%;background:linear-gradient(90deg,#775b95,#a98fc4);width:0}
+.section{background:#fff;border:1px solid var(--border);border-radius:20px;padding:18px;box-shadow:var(--shadow);margin-bottom:18px}.section h2{margin:0 0 12px}.checkgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.item{display:flex;justify-content:space-between;gap:12px;align-items:center;border:1px solid var(--border);border-radius:14px;padding:12px}.item label{font-weight:700}textarea{width:100%;min-height:90px;resize:vertical;border:1px solid var(--border);border-radius:12px;padding:10px;font:inherit;margin:6px 0 14px}.books{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}.book{background:#fff;border:1px solid var(--border);border-radius:16px;padding:14px}.book input{width:100%;margin:4px 0 7px;border:1px solid var(--border);border-radius:999px;padding:7px}.book small{color:var(--muted)}
+.modal{position:fixed;inset:0;background:rgba(35,26,45,.48);display:none;align-items:center;justify-content:center;padding:20px;z-index:30}.modal.open{display:flex}.modal-card{width:min(720px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:22px;padding:22px;box-shadow:0 30px 80px rgba(0,0,0,.25)}.modalTop{display:flex;justify-content:space-between;gap:12px}.close{border:0;background:#f1ebf5;border-radius:10px;padding:8px 10px;font-weight:800;cursor:pointer}
+.authgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.notice{padding:10px 12px;border-radius:12px;background:#f6f0fa;color:#5f4978;font-size:13px;margin:10px 0}.good{background:var(--good);color:#24653a}
+@media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}.books{grid-template-columns:1fr 1fr}.calendar{grid-template-columns:repeat(2,1fr)}.dow{display:none}}@media(max-width:560px){.calendar,.books,.checkgrid,.authgrid{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}}
+
+.analytics-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:18px}
+.chartbox{background:#fff;border:1px solid var(--border);border-radius:20px;padding:18px;box-shadow:var(--shadow)}
+.chartbox h3{margin:0 0 4px}.chartsub{font-size:12px;color:var(--muted);margin-bottom:14px}
+.linechart{width:100%;height:270px;display:block}.gridline{stroke:#e9e2ee;stroke-width:1}.axistext{fill:#81788a;font-size:10px}
+.trendline{fill:none;stroke:#6f4f8f;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.trendarea{fill:url(#areaGradient)}.point{fill:#6f4f8f;stroke:#fff;stroke-width:2}
+.habitrow{display:grid;grid-template-columns:145px 1fr 46px;gap:10px;align-items:center;margin:11px 0}
+.habitlabel{font-size:13px;font-weight:700}.habittrack{height:12px;background:#eee8f2;border-radius:999px;overflow:hidden}.habitfill{height:100%;background:linear-gradient(90deg,#775b95,#a98fc4);border-radius:999px}
+.analytics-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}.akpi{background:#f4eef8;border:1px solid var(--border);border-radius:16px;padding:14px}.akpi span{display:block;color:var(--muted);font-size:12px}.akpi b{font-size:24px;display:block;margin-top:3px}
+.weekgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}.weekcard{background:#faf7fc;border:1px solid var(--border);border-radius:14px;padding:12px;text-align:center}.weekcard b{display:block;font-size:20px;margin-top:4px}
+@media(max-width:850px){.analytics-grid{grid-template-columns:1fr}.analytics-kpis{grid-template-columns:1fr 1fr}.weekgrid{grid-template-columns:1fr 1fr}.habitrow{grid-template-columns:120px 1fr 42px}}
+
+
+/* ===== Mobile optimization layer ===== */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;scroll-behavior:smooth}
+body{min-width:0;overflow-x:hidden}
+img,svg,canvas{max-width:100%;height:auto}
+button,input,select,textarea{max-width:100%;font-size:16px}
+button,.tab,.action,.btn,.close{min-height:44px;touch-action:manipulation}
+input[type="checkbox"]{width:22px;height:22px;min-width:22px}
+input[type="number"],input[type="email"],input[type="password"],select,textarea{width:100%}
+.day,.section,.book,.chartbox,.stat,.akpi,.weekcard{overflow-wrap:anywhere}
+.modal-card{-webkit-overflow-scrolling:touch}
+.tabs{overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;padding-bottom:4px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs .tab{flex:0 0 auto;white-space:nowrap}
+.controls,.toolbar{align-items:stretch}
+.controls>*{max-width:100%}
+
+@media(max-width:900px){
+  .wrap{padding:16px}
+  .hero{padding:22px;border-radius:20px}
+  .heroTop{gap:12px}
+  .calendar{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .day{min-height:0}
+  .books{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .checkgrid{grid-template-columns:1fr}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .authgrid{grid-template-columns:1fr}
+}
+
+@media(max-width:600px){
+  .wrap{padding:10px}
+  .hero{padding:18px;border-radius:16px}
+  .hero h1,h1{font-size:clamp(26px,9vw,36px);line-height:1.08}
+  .hero p{font-size:14px;line-height:1.45}
+  .stats{gap:8px;margin-top:14px}
+  .stat{padding:11px;border-radius:13px}
+  .stat b{font-size:20px}
+  .tabs{margin:14px -2px 16px;padding:0 2px 5px}
+  .tab,.action,.btn{padding:10px 13px}
+  .toolbar,.controls{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .toolbar .primary,.controls .primary{grid-column:auto}
+  .month,.controls input,.controls button{width:100%}
+  .calendar{grid-template-columns:1fr;gap:8px}
+  .dow{display:none}
+  .day{padding:14px;border-radius:14px}
+  .num{font-size:22px}
+  .meta{font-size:13px}
+  .books{grid-template-columns:1fr}
+  .book{padding:14px}
+  .section{padding:14px;border-radius:16px}
+  .checkgrid{grid-template-columns:1fr}
+  .item{align-items:flex-start;padding:12px}
+  .item label{line-height:1.35}
+  .modal{padding:8px;align-items:flex-end}
+  .modal-card{width:100%;max-height:92dvh;border-radius:20px 20px 0 0;padding:16px}
+  .modalTop,.top{align-items:flex-start}
+  textarea{min-height:110px}
+  .cloud{width:100%}
+  .analytics-grid{grid-template-columns:1fr}
+  .analytics-kpis{grid-template-columns:1fr 1fr}
+  .weekgrid{grid-template-columns:1fr 1fr}
+  .habitrow{grid-template-columns:110px minmax(0,1fr) 42px;gap:8px}
+  .linechart{height:220px}
+}
+
+@media(max-width:390px){
+  .stats{grid-template-columns:1fr}
+  .toolbar,.controls{grid-template-columns:1fr}
+  .analytics-kpis,.weekgrid{grid-template-columns:1fr}
+  .habitrow{grid-template-columns:1fr}
+  .habitrow b{text-align:right}
+}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <div class="heroTop"><div><h1>My Growth Tracker</h1><p>Mindset • spirituality • health • skills • business • creativity</p></div><div class="cloud" id="cloudStatus">Local mode — connect Supabase to sync</div></div>
+    <div class="stats"><div class="stat">Average completion<b id="avgPct">0%</b></div><div class="stat">Perfect days<b id="perfectDays">0</b></div><div class="stat">Exercise sessions<b id="exerciseCount">0</b></div><div class="stat">Water goal days<b id="waterDays">0</b></div></div>
+  </div>
+
+  <div class="controls">
+    <label><b>Month:</b></label><input class="month" type="month" id="monthPicker" value="2026-09" />
+    <button class="action primary" onclick="openToday()">Open Today</button>
+    <button class="action ghost" id="authBtn" onclick="openSettings()">Supabase / Sign in</button>
+    <button class="action ghost" onclick="syncNow()">Sync now</button>
+    <button class="action ghost" onclick="exportData()">Export backup</button>
+  </div>
+
+  <div class="tabs"><button class="tab active" data-tab="calendarPanel">Calendar</button><button class="tab" data-tab="todayPanel">Daily Tracker</button><button class="tab" data-tab="analyticsPanel">Analytics</button><button class="tab" data-tab="booksPanel">Audiobooks</button><button class="tab" data-tab="intentionsPanel">Monthly Intentions</button></div>
+  <section id="calendarPanel" class="panel active"><div id="calendar" class="calendar"></div></section>
+  <section id="todayPanel" class="panel"><div class="section"><h2>Choose a day</h2><select id="daySelect"></select></div><div id="dailyEditor"></div></section>
+
+  <section id="analyticsPanel" class="panel">
+    <div class="section">
+      <h2>Monthly Analytics</h2>
+      <p class="tiny">Your charts update automatically as you complete each day.</p>
+      <div class="analytics-kpis">
+        <div class="akpi"><span>Current streak</span><b id="streakKpi">0 days</b></div>
+        <div class="akpi"><span>Best day</span><b id="bestDayKpi">—</b></div>
+        <div class="akpi"><span>Average water</span><b id="avgWaterKpi">0/8</b></div>
+        <div class="akpi"><span>Completed habits</span><b id="habitsDoneKpi">0</b></div>
+      </div>
+    </div>
+    <div class="analytics-grid">
+      <div class="chartbox">
+        <h3>Daily Progress Trend</h3>
+        <div class="chartsub">Completion percentage for every day in the selected month.</div>
+        <div id="trendChart"></div>
+      </div>
+      <div class="chartbox">
+        <h3>Habit Consistency</h3>
+        <div class="chartsub">Percentage of days each habit reached its goal.</div>
+        <div id="habitChart"></div>
+      </div>
+    </div>
+    <div class="chartbox" style="margin-top:18px">
+      <h3>Weekly Performance</h3>
+      <div class="chartsub">Average completion by week of the month.</div>
+      <div id="weeklyChart" class="weekgrid"></div>
+    </div>
+  </section>
+
+  <section id="booksPanel" class="panel"><div class="section"><h2>Weekly Audiobooks</h2><p class="tiny">Edit these each month. They save locally and to Supabase when signed in.</p><div id="books" class="books"></div></div></section>
+  <section id="intentionsPanel" class="panel"><div class="section"><h2>Monthly Intentions</h2><label>Main wealth/business goal</label><textarea id="goalBusiness"></textarea><label>AI/marketing skill to improve</label><textarea id="goalSkill"></textarea><label>Creative project to complete</label><textarea id="goalCreative"></textarea><label>Health goal</label><textarea id="goalHealth"></textarea><label>What I want to feel more of this month</label><textarea id="goalFeeling"></textarea></div></section>
+</div>
+
+<div id="dayModal" class="modal"><div class="modal-card"><div class="modalTop"><div><h2 id="modalTitle" style="margin:0"></h2><div id="modalSubtitle" class="tiny"></div></div><button class="close" onclick="closeDay()">Close</button></div><div id="modalBody" style="margin-top:16px"></div></div></div>
+
+<div id="settingsModal" class="modal"><div class="modal-card"><div class="modalTop"><div><h2 style="margin:0">Supabase Connection & Account</h2><div class="tiny">Your publishable/anon key is safe to use in a browser app when RLS is enabled. Never use the service_role key here.</div></div><button class="close" onclick="closeSettings()">Close</button></div>
+  <div id="loggedInNotice" class="notice good" style="display:none;align-items:center;justify-content:space-between;gap:12px;padding:14px">
+    <div>
+      <div style="font-size:15px;font-weight:800">🟢 Signed in as <span id="userEmailSpan"></span></div>
+      <div class="tiny" style="margin-top:4px;color:#24653a">All habits, notes, audiobooks & monthly intentions are syncing automatically to Supabase cloud.</div>
+    </div>
+    <button class="action ghost" onclick="signOut()" style="background:#fff;color:#d32f2f;border:1px solid #ef9a9a;white-space:nowrap">Sign out</button>
+  </div>
+  <div class="notice">
+    <b>Quick Setup:</b><br>
+    1) Run <b>Supabase_Setup.sql</b> in your Supabase SQL Editor.<br>
+    2) To enable instant login without waiting for email links: Go to Supabase Dashboard &rarr; <b>Authentication</b> &rarr; <b>Providers</b> &rarr; <b>Email</b> &rarr; Turn <b>"Confirm email" OFF</b>.<br>
+    3) Enter your email/password below and click <b>Create account</b> or <b>Sign in</b>.
+  </div>
+  <label>Project URL</label><input id="sbUrl" style="width:100%;margin:6px 0 10px" placeholder="https://xxxx.supabase.co" />
+  <label>Publishable / anon key</label><input id="sbKey" style="width:100%;margin:6px 0 10px" placeholder="eyJ... or sb_publishable_..." />
+  <button class="action primary" onclick="saveSupabaseConfig()">Save connection</button>
+  <hr style="border:none;border-top:1px solid var(--border);margin:20px 0">
+  <div id="authBox">
+    <div class="authgrid"><div><label>Email</label><input id="authEmail" type="email" style="width:100%" /></div><div><label>Password</label><input id="authPassword" type="password" style="width:100%" /></div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="action primary" onclick="signIn()">Sign in</button><button class="action ghost" onclick="signUp()">Create account</button><button class="action ghost" onclick="signOut()">Sign out</button></div>
+  </div><div id="authMessage" class="notice" style="display:none"></div>
+</div></div>
+
+<script>
+const { createClient } = window.supabase;
+let sb=null, session=null, saveTimer=null;
+const configKey='growth-supabase-config-v1';
+const habitNames=['Meditate 15m','Audiobook 1h','Skill 1h','Affirmations 10m','Visualize 10m','Business 1h','Supplements'];
+const themes={0:['Love','AI'],1:['Wealth','Marketing'],2:['Health','AI'],3:['Love','Drawing / Creative'],4:['Health','AI'],5:['Peace','Drawing'],6:['Wealth','Marketing']}; // JS: Sun=0
+const bodyFocus={1:'Legs',6:'All body',0:'Hands / arms'};
+const defaultBooks=[['Think and Grow Rich','Napoleon Hill','Wealth, goals and persistence'],['The Game of Life and How to Play It','Florence Scovel Shinn','Presence and spiritual awareness'],['The Psychology of Money','Morgan Housel','Money mindset and behavior'],['Breaking the Habit of Being Yourself','Joe Dispenza','Mindset, meditation and visualization'],['The Seven Spiritual Laws of Success','Deepak Chopra','Intention and abundance']];
+let currentMonth=document.getElementById('monthPicker').value;
+let monthState={tracker:{},intentions:{},books:structuredClone(defaultBooks)};
+
+function localKey(m){return 'growth-month-'+m}
+function loadLocal(m){try{return JSON.parse(localStorage.getItem(localKey(m)))||{tracker:{},intentions:{},books:structuredClone(defaultBooks)}}catch(e){return {tracker:{},intentions:{},books:structuredClone(defaultBooks)}}}
+function saveLocal(){localStorage.setItem(localKey(currentMonth),JSON.stringify(monthState));}
+function daysInMonth(){let [y,m]=currentMonth.split('-').map(Number);return new Date(y,m,0).getDate()}
+function dateFor(day){let [y,m]=currentMonth.split('-').map(Number);return new Date(y,m-1,day)}
+function isoDate(day){return currentMonth+'-'+String(day).padStart(2,'0')}
+function exerciseDue(day){const anchor=new Date(2026,8,1);const d=dateFor(day);const diff=Math.floor((d-anchor)/86400000);return diff>=0 && diff%3===0}
+function getDay(day){if(!monthState.tracker[day]) monthState.tracker[day]={habits:{},water:0,exercise:exerciseDue(day)?'No':'N/A',notes:''};return monthState.tracker[day]}
+function completion(day){const d=getDay(day);let done=habitNames.filter(h=>d.habits[h]).length+(d.water>=8?1:0),total=8;if(exerciseDue(day)){total++;if(d.exercise==='Yes')done++}return Math.round(done/total*100)}
+function weekIndex(day){return Math.min(4,Math.floor((day-1)/7))}
+function bookTitle(day){return (monthState.books[weekIndex(day)]||[''])[0]||'Add audiobook'}
+
+const defaultSupabaseUrl = 'https://nbiokijwzipftiuawyrs.supabase.co';
+const defaultSupabaseKey = 'sb_publishable_tarNTC3zixNpeSwMjlIZ6Q_xoeXnfey';
+
+function cleanSbUrl(u){
+  return String(u||'').trim().replace(/\/+$/,'').replace(/\/rest\/v1\/?$/i,'');
+}
+
+async function initSupabase(){
+  if(!window.supabase?.createClient){
+    setCloud('Supabase library unavailable');
+    return;
+  }
+  const cfg=JSON.parse(localStorage.getItem(configKey)||'null');
+  const url=cleanSbUrl(cfg?.url || defaultSupabaseUrl);
+  const key=(cfg?.key || defaultSupabaseKey).trim();
+
+  if(!url||!key){
+    setCloud('Local mode — connect Supabase to sync');
+    return;
+  }
+  try{
+    sb=createClient(url,key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+    const {data,error}=await sb.auth.getSession();
+    if(error){
+      setCloud('Auth error: '+error.message);
+      return;
+    }
+    session=data?.session||null;
+    sb.auth.onAuthStateChange(async(_,s)=>{
+      session=s;
+      updateAuthUI();
+      if(session) await loadCloud();
+    });
+    updateAuthUI();
+    if(session) await loadCloud();
+    else setCloud('Supabase connected — sign in to sync');
+  }catch(e){
+    setCloud('Supabase config error: '+(e.message||'Invalid URL/Key'));
+  }
+}
+
+function setCloud(t){const el=document.getElementById('cloudStatus');if(el)el.innerHTML=t}
+function updateAuthUI(){
+  const cloudEl = document.getElementById('cloudStatus');
+  const btn = document.getElementById('authBtn');
+  const loggedInNotice = document.getElementById('loggedInNotice');
+  const userEmailSpan = document.getElementById('userEmailSpan');
+  
+  if(session){
+    if(cloudEl){
+      cloudEl.innerHTML = `🟢 <b>Cloud Sync Active</b> • ${session.user.email}`;
+      cloudEl.classList.add('active');
+    }
+    if(btn){
+      btn.innerHTML = `🟢 <b>${session.user.email.split('@')[0]}</b>`;
+      btn.title = `Signed in as ${session.user.email}`;
+      btn.style.background = '#dff4e5';
+      btn.style.color = '#1f5f33';
+      btn.style.border = '1px solid #b7e4c7';
+    }
+    if(loggedInNotice){
+      loggedInNotice.style.display = 'flex';
+      if(userEmailSpan) userEmailSpan.textContent = session.user.email;
+    }
+  } else {
+    if(cloudEl){
+      cloudEl.textContent = sb ? '⚡ Supabase connected — sign in to sync' : 'Local mode — connect Supabase to sync';
+      cloudEl.classList.remove('active');
+    }
+    if(btn){
+      btn.textContent = 'Supabase / Sign in';
+      btn.title = '';
+      btn.style.background = '';
+      btn.style.color = '';
+      btn.style.border = '';
+    }
+    if(loggedInNotice){
+      loggedInNotice.style.display = 'none';
+    }
+  }
+}
+
+async function loadCloud(){
+  if(!sb||!session)return;
+  setCloud('Loading cloud data…');
+  const {data,error}=await sb.from('growth_months').select('tracker_data,intentions,books').eq('user_id',session.user.id).eq('month_key',currentMonth).maybeSingle();
+  if(error){
+    if(error.code==='42P01'||error.message?.includes('relation "growth_months" does not exist')){
+      setCloud('Table missing — run Supabase_Setup.sql in SQL Editor');
+    }else{
+      setCloud('Cloud load error: '+error.message);
+    }
+    return;
+  }
+  if(data){
+    monthState={tracker:data.tracker_data||{},intentions:data.intentions||{},books:(data.books?.length?data.books:structuredClone(defaultBooks))};
+    saveLocal();
+  }else{
+    monthState=loadLocal(currentMonth);
+    await saveCloud();
+  }
+  renderAll();
+  setCloud(`Cloud synced • ${session.user.email}`);
+}
+
+async function saveCloud(){
+  if(!sb||!session)return;
+  const payload={
+    user_id:session.user.id,
+    month_key:currentMonth,
+    tracker_data:monthState.tracker,
+    intentions:monthState.intentions,
+    books:monthState.books,
+    updated_at:new Date().toISOString()
+  };
+  const {error}=await sb.from('growth_months').upsert(payload,{onConflict:'user_id,month_key'});
+  if(error){
+    if(error.code==='42P01'||error.message?.includes('relation "growth_months" does not exist')){
+      setCloud('Table missing — run Supabase_Setup.sql in SQL Editor');
+    }else{
+      setCloud('Sync error: '+error.message);
+    }
+  }else{
+    setCloud(`Saved to cloud • ${session.user.email}`);
+  }
+}
+function queueSave(){saveLocal();clearTimeout(saveTimer);saveTimer=setTimeout(saveCloud,450);renderStats();renderCalendar();renderAnalytics()}
+async function syncNow(){saveLocal();if(session)await saveCloud();else openSettings()}
+
+function renderCalendar(){const el=document.getElementById('calendar');el.innerHTML='';['MON','TUE','WED','THU','FRI','SAT','SUN'].forEach(x=>el.insertAdjacentHTML('beforeend',`<div class="dow">${x}</div>`));let [y,m]=currentMonth.split('-').map(Number),first=new Date(y,m-1,1).getDay(),off=(first+6)%7;for(let i=0;i<off;i++)el.insertAdjacentHTML('beforeend','<div class="day empty"></div>');for(let day=1;day<=daysInMonth();day++){let d=dateFor(day),[theme,skill]=themes[d.getDay()],pct=completion(day),focus=bodyFocus[d.getDay()]||'15-min movement';el.insertAdjacentHTML('beforeend',`<div class="day" onclick="openDay(${day})"><div class="num">${day}</div><div class="meta"><b>Meditation:</b> ${theme}<br><b>Skill:</b> ${skill}</div>${exerciseDue(day)?`<span class="pill">Exercise: ${focus}</span>`:''}<div class="meta"><b>Book:</b> ${bookTitle(day)}</div><div class="progress"><div class="bar" style="width:${pct}%"></div></div><div class="tiny" style="margin-top:5px">${pct}% complete</div></div>`)} }
+function renderStats(){let arr=Array.from({length:daysInMonth()},(_,i)=>completion(i+1));document.getElementById('avgPct').textContent=Math.round(arr.reduce((a,b)=>a+b,0)/arr.length)+'%';document.getElementById('perfectDays').textContent=arr.filter(x=>x===100).length;document.getElementById('exerciseCount').textContent=Array.from({length:daysInMonth()},(_,i)=>i+1).filter(d=>exerciseDue(d)&&getDay(d).exercise==='Yes').length;document.getElementById('waterDays').textContent=Array.from({length:daysInMonth()},(_,i)=>getDay(i+1).water>=8).length}
+
+function renderAnalytics(){
+  const n=daysInMonth();
+  const pcts=Array.from({length:n},(_,i)=>completion(i+1));
+  const days=Array.from({length:n},(_,i)=>i+1);
+
+  let currentStreak=0;
+  for(let d=n;d>=1;d--){if(completion(d)>0)currentStreak++;else if(currentStreak>0)break;}
+  const best=Math.max(...pcts),bestDay=best>0?pcts.indexOf(best)+1:null;
+  const avgWater=(days.reduce((s,d)=>s+Math.min(8,Number(getDay(d).water)||0),0)/n).toFixed(1);
+  let habitsDone=0;
+  days.forEach(d=>{const rec=getDay(d);habitsDone+=habitNames.filter(h=>rec.habits[h]).length;if(rec.water>=8)habitsDone++;if(exerciseDue(d)&&rec.exercise==='Yes')habitsDone++;});
+  const s=document.getElementById('streakKpi');if(s)s.textContent=currentStreak+' day'+(currentStreak===1?'':'s');
+  const b=document.getElementById('bestDayKpi');if(b)b.textContent=bestDay?`Day ${bestDay} • ${best}%`:'—';
+  const w=document.getElementById('avgWaterKpi');if(w)w.textContent=avgWater+'/8';
+  const h=document.getElementById('habitsDoneKpi');if(h)h.textContent=habitsDone;
+
+  const chart=document.getElementById('trendChart');
+  if(chart){
+    const W=760,H=270,padL=40,padR=16,padT=18,padB=32,plotW=W-padL-padR,plotH=H-padT-padB;
+    const x=d=>padL+(d-1)/(Math.max(1,n-1))*plotW, y=v=>padT+(100-v)/100*plotH;
+    const pts=days.map(d=>`${x(d).toFixed(1)},${y(pcts[d-1]).toFixed(1)}`).join(' ');
+    const areaPts=`${padL},${padT+plotH} ${pts} ${padL+plotW},${padT+plotH}`;
+    let grid='';[0,25,50,75,100].forEach(v=>{const yy=y(v);grid+=`<line class="gridline" x1="${padL}" y1="${yy}" x2="${padL+plotW}" y2="${yy}"/><text class="axistext" x="4" y="${yy+3}">${v}%</text>`;});
+    let xlabels='';days.forEach(d=>{if(d===1||d===n||d%5===0)xlabels+=`<text class="axistext" text-anchor="middle" x="${x(d)}" y="${H-8}">${d}</text>`;});
+    const circles=days.map(d=>`<circle class="point" cx="${x(d)}" cy="${y(pcts[d-1])}" r="3"><title>Day ${d}: ${pcts[d-1]}%</title></circle>`).join('');
+    chart.innerHTML=`<svg class="linechart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Daily completion trend"><defs><linearGradient id="areaGradient" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#8b6fa8" stop-opacity=".28"/><stop offset="100%" stop-color="#8b6fa8" stop-opacity=".03"/></linearGradient></defs>${grid}${xlabels}<polygon class="trendarea" points="${areaPts}"/><polyline class="trendline" points="${pts}"/>${circles}</svg>`;
+  }
+
+  const hc=document.getElementById('habitChart');
+  if(hc){
+    const rows=[];
+    habitNames.forEach(name=>{const count=days.filter(d=>getDay(d).habits[name]).length;rows.push([name,Math.round(count/n*100)]);});
+    rows.push(['Water goal',Math.round(days.filter(d=>getDay(d).water>=8).length/n*100)]);
+    const exDays=days.filter(d=>exerciseDue(d));rows.push(['Exercise',exDays.length?Math.round(exDays.filter(d=>getDay(d).exercise==='Yes').length/exDays.length*100):0]);
+    hc.innerHTML=rows.map(([name,pct])=>`<div class="habitrow"><div class="habitlabel">${name}</div><div class="habittrack"><div class="habitfill" style="width:${pct}%"></div></div><b>${pct}%</b></div>`).join('');
+  }
+
+  const wc=document.getElementById('weeklyChart');
+  if(wc){
+    const weeks=[];for(let start=1,idx=1;start<=n;start+=7,idx++){const end=Math.min(start+6,n),vals=pcts.slice(start-1,end);weeks.push([idx,Math.round(vals.reduce((a,b)=>a+b,0)/vals.length),start,end]);}
+    wc.innerHTML=weeks.map(([idx,pct,start,end])=>`<div class="weekcard"><span class="tiny">Week ${idx}<br>Days ${start}–${end}</span><b>${pct}%</b><div class="progress"><div class="bar" style="width:${pct}%"></div></div></div>`).join('');
+  }
+}
+
+function editorHTML(day){const rec=getDay(day),dt=dateFor(day),[theme,skill]=themes[dt.getDay()],focus=bodyFocus[dt.getDay()]||'15-min movement';let items=habitNames.map(h=>`<div class="item"><label>${h}</label><input type="checkbox" ${rec.habits[h]?'checked':''} onchange="setHabit(${day},'${h}',this.checked)"></div>`).join('');items+=`<div class="item"><label>Water — 8 glasses</label><input type="number" min="0" max="20" value="${rec.water}" onchange="setWater(${day},this.value)"></div>`;if(exerciseDue(day))items+=`<div class="item"><label>Exercise — ${focus}</label><select onchange="setExercise(${day},this.value)"><option ${rec.exercise==='No'?'selected':''}>No</option><option ${rec.exercise==='Yes'?'selected':''}>Yes</option></select></div>`;return `<div class="section"><h2>${dt.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})}</h2><p><b>Meditation:</b> ${theme} &nbsp; • &nbsp; <b>Skill:</b> ${skill}</p><p><b>Audiobook:</b> ${bookTitle(day)}</p><div class="checkgrid">${items}</div><div class="progress" style="margin-top:16px"><div class="bar" style="width:${completion(day)}%"></div></div><p><b>${completion(day)}% complete</b></p><label>Daily notes / reflection</label><textarea onchange="setNotes(${day},this.value)">${rec.notes||''}</textarea></div>`}
+function setHabit(day,h,v){getDay(day).habits[h]=v;queueSave();refreshEditors(day)}function setWater(day,v){getDay(day).water=Math.max(0,Number(v)||0);queueSave();refreshEditors(day)}function setExercise(day,v){getDay(day).exercise=v;queueSave();refreshEditors(day)}function setNotes(day,v){getDay(day).notes=v;queueSave()}
+function showEditor(day){const e=document.getElementById('dailyEditor');e.dataset.day=day;e.innerHTML=editorHTML(day)}function refreshEditors(day){if(Number(document.getElementById('dailyEditor').dataset.day)===day)showEditor(day);if(document.getElementById('dayModal').classList.contains('open')&&Number(document.getElementById('dayModal').dataset.day)===day)openDay(day)}
+function openDay(day){document.getElementById('dayModal').dataset.day=day;document.getElementById('modalTitle').textContent=isoDate(day);document.getElementById('modalSubtitle').textContent=completion(day)+'% complete';document.getElementById('modalBody').innerHTML=editorHTML(day);document.getElementById('dayModal').classList.add('open')}function closeDay(){document.getElementById('dayModal').classList.remove('open')}
+function renderDaySelect(){const s=document.getElementById('daySelect');s.innerHTML='';for(let d=1;d<=daysInMonth();d++){const o=document.createElement('option');o.value=d;o.textContent=dateFor(d).toLocaleDateString('en-US',{month:'long',day:'numeric'});s.appendChild(o)}s.onchange=()=>showEditor(Number(s.value));showEditor(1)}
+function renderBooks(){const b=document.getElementById('books');b.innerHTML='';monthState.books=monthState.books?.length?monthState.books:structuredClone(defaultBooks);monthState.books.forEach((x,i)=>b.insertAdjacentHTML('beforeend',`<div class="book"><small>Week ${i+1}</small><input value="${esc(x[0])}" onchange="setBook(${i},0,this.value)"><input value="${esc(x[1])}" onchange="setBook(${i},1,this.value)"><input value="${esc(x[2])}" onchange="setBook(${i},2,this.value)"></div>`))}
+function setBook(i,j,v){monthState.books[i][j]=v;queueSave()}function esc(s){return String(s||'').replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;')}
+function renderIntentions(){['Business','Skill','Creative','Health','Feeling'].forEach(k=>{const id='goal'+k,el=document.getElementById(id);el.value=monthState.intentions[k]||'';el.oninput=()=>{monthState.intentions[k]=el.value;queueSave()}})}
+function renderAll(){renderCalendar();renderStats();renderDaySelect();renderBooks();renderIntentions();renderAnalytics()}
+
+async function changeMonth(m){currentMonth=m;monthState=loadLocal(m);renderAll();if(session)await loadCloud()}
+document.getElementById('monthPicker').addEventListener('change',e=>changeMonth(e.target.value));
+document.querySelectorAll('.tab').forEach(btn=>btn.onclick=()=>{document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));btn.classList.add('active');document.getElementById(btn.dataset.tab).classList.add('active');if(btn.dataset.tab==='analyticsPanel')renderAnalytics()});
+function openToday(){const n=new Date(),m=`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`;if(m!==currentMonth){document.getElementById('monthPicker').value=m;changeMonth(m).then(()=>openDay(n.getDate()))}else openDay(n.getDate())}
+function exportData(){const blob=new Blob([JSON.stringify({month:currentMonth,...monthState},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`Growth_Tracker_${currentMonth}.json`;a.click();URL.revokeObjectURL(a.href)}
+
+function openSettings(){
+  const cfg=JSON.parse(localStorage.getItem(configKey)||'{}');
+  document.getElementById('sbUrl').value=cfg.url||defaultSupabaseUrl;
+  document.getElementById('sbKey').value=cfg.key||defaultSupabaseKey;
+  document.getElementById('settingsModal').classList.add('open');
+  updateAuthUI();
+}
+function closeSettings(){document.getElementById('settingsModal').classList.remove('open')}
+async function saveSupabaseConfig(){
+  const rawUrl=document.getElementById('sbUrl').value.trim();
+  const key=document.getElementById('sbKey').value.trim();
+  const url=cleanSbUrl(rawUrl);
+  if(!url||!key){
+    authMsg('Enter both Project URL and publishable/anon key.');
+    return;
+  }
+  localStorage.setItem(configKey,JSON.stringify({url,key}));
+  authMsg('Connection saved. Reloading Supabase client…',true);
+  await initSupabase();
+}
+function authMsg(t,ok=false){const e=document.getElementById('authMessage');e.style.display='block';e.className='notice'+(ok?' good':'');e.textContent=t}
+async function signIn(){if(!sb){authMsg('Save your Supabase connection first.');return}const email=document.getElementById('authEmail').value.trim(),password=document.getElementById('authPassword').value;if(!email||!password){authMsg('Please enter email and password.');return}const {data,error}=await sb.auth.signInWithPassword({email,password});if(error)return authMsg(error.message);session=data.session;authMsg('Signed in. Your tracker is syncing.',true);await loadCloud()}
+async function signUp(){if(!sb){authMsg('Save your Supabase connection first.');return}const email=document.getElementById('authEmail').value.trim(),password=document.getElementById('authPassword').value;if(!email||!password){authMsg('Please enter email and password.');return}const {data,error}=await sb.auth.signUp({email,password});if(error)return authMsg(error.message);if(data.session){session=data.session;authMsg('Account created and signed in! Cloud syncing active.',true);await loadCloud()}else{authMsg('Account created! Check your inbox if "Confirm email" is enabled in Supabase, or try signing in if email confirmation is turned OFF.',true)}}
+async function signOut(){if(sb)await sb.auth.signOut();session=null;authMsg('Signed out. The app will keep saving locally on this device.',true);updateAuthUI()}
+
+monthState=loadLocal(currentMonth);renderAll();initSupabase();
+</script>
+</body>
+</html>
