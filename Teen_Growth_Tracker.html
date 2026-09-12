@@ -5390,6 +5390,7 @@ function queueSave() {
   renderStats();
   renderCalendar();
   renderAnalytics();
+  if (typeof updatePointsDisplay === 'function') updatePointsDisplay();
 }
 
 async function syncNow() {
@@ -6408,7 +6409,58 @@ const DEFAULT_REWARDS = [
 const BUILT_IN_TASKS = dailyTasks.slice();
 let rewardsList = loadStore(rewardsKey, DEFAULT_REWARDS);
 let redemptions = loadStore(redemptionsKey, []);
-let userPoints  = loadStore(pointsKey, 450);
+/* Points are DERIVED from the tracked data, not a stored counter:
+   +5 per completed task, +25 per perfect day, +50 per 7-day streak,
+   minus anything claimed. Ticking a task adds points and unticking
+   removes them, and a reload can never double-count. */
+const PTS_PER_TASK = 5, PTS_PERFECT_DAY = 25, PTS_STREAK_BONUS = 50, STREAK_LEN = 7;
+
+function pointsForMonth(monthStr, tracker) {
+  const [y, m] = monthStr.split('-').map(Number);
+  if (!y || !m) return 0;
+  const days = new Date(y, m, 0).getDate();
+  let pts = 0, run = 0, bonuses = 0;
+  for (let day = 1; day <= days; day++) {
+    const d = tracker[day] || {};
+    const tasks = d.tasks || {}, tidy = d.tidy || {};
+    const dow = new Date(y, m - 1, day).getDay();
+    const isWeekend = (dow === 0 || dow === 6);
+    let total = 0, done = 0;
+    dailyTasks.forEach(t => {
+      if (t.schoolOnly && isWeekend) return;
+      if (t.weekendOnly && !isWeekend) return;
+      total++;
+      if (tasks[t.id]) done++;
+    });
+    if (isWeekend) total += 4;                       // weekend room-tidy counts toward the day
+    done += ['floor','desk','bed','sweepMop'].filter(k => tidy[k]).length;
+    pts += done * PTS_PER_TASK;
+    if (total > 0 && done >= total) pts += PTS_PERFECT_DAY;
+    if (done > 0) { run++; if (run % STREAK_LEN === 0) bonuses++; } else { run = 0; }
+  }
+  return pts + bonuses * PTS_STREAK_BONUS;
+}
+
+function earnedPoints() {
+  let total = 0;
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k || k.indexOf('teen-growth-month-') !== 0) continue;
+    try {
+      const data = JSON.parse(localStorage.getItem(k)) || {};
+      total += pointsForMonth(k.replace('teen-growth-month-', ''), data.tracker || {});
+    } catch (e) { /* skip unreadable month */ }
+  }
+  return total;
+}
+
+// a declined claim is refunded simply by no longer counting as spent
+function spentPoints() {
+  return redemptions.filter(r => r.status !== 'Declined')
+                    .reduce((s, r) => s + (Number(r.cost) || 0), 0);
+}
+
+function pointsBalance() { return Math.max(0, earnedPoints() - spentPoints()); }
 
 // A parent may have added or removed routine tasks.
 const customTasks = loadStore(tasksKey, null);
@@ -6418,7 +6470,7 @@ function parentConfig() { return loadStore(parentCfgKey, null); }
 
 function updatePointsDisplay() {
   const elem = document.getElementById('pointsBalanceDisplay');
-  if (elem) elem.innerText = `⭐️ ${userPoints} PTS`;
+  if (elem) elem.innerText = `⭐️ ${pointsBalance().toLocaleString()} PTS`;
 }
 
 function renderRewardsGrid() {
@@ -6453,13 +6505,11 @@ function escapeHTML(s) {
 function claimReward(rewardId) {
   const r = rewardsList.find(x => String(x.id) === String(rewardId));
   if (!r) return;
-  if (userPoints < r.cost) {
-    alert(`❌ Not enough points! You need ⭐️ ${r.cost} PTS for "${r.name}". You currently have ⭐️ ${userPoints} PTS.`);
+  const balance = pointsBalance();
+  if (balance < r.cost) {
+    alert(`❌ Not enough points! You need ⭐️ ${r.cost} PTS for "${r.name}". You currently have ⭐️ ${balance} PTS.`);
     return;
   }
-  userPoints -= r.cost;
-  saveStore(pointsKey, userPoints);
-  updatePointsDisplay();
 
   redemptions.unshift({
     id: 'c' + Date.now(),
@@ -6469,6 +6519,7 @@ function claimReward(rewardId) {
     status: 'Pending'
   });
   saveStore(redemptionsKey, redemptions);
+  updatePointsDisplay();
   renderRedemptionHistory();
   renderParentApprovals();
   avatarCheer();
@@ -6601,7 +6652,7 @@ function renderParentProgress() {
     ${tile('Current streak', streak + (streak === 1 ? ' day' : ' days'))}
     ${tile('Perfect days', perfect)}
     ${tile('Homework done', homework)}
-    ${tile('Points balance', '&#11088; ' + userPoints)}
+    ${tile('Points balance', '&#11088; ' + pointsBalance().toLocaleString())}
     ${tile('Awaiting approval', pending)}
   </div>`;
 }
@@ -6631,11 +6682,7 @@ function decideRedemption(id, status) {
   const r = redemptions.find(x => x.id === id);
   if (!r || r.status !== 'Pending') return;
   r.status = status;
-  if (status === 'Declined') {
-    userPoints += Number(r.cost) || 0;
-    saveStore(pointsKey, userPoints);
-    updatePointsDisplay();
-  }
+  if (status === 'Declined') updatePointsDisplay();   // cost stops counting as spent
   saveStore(redemptionsKey, redemptions);
   renderParentApprovals();
   renderParentProgress();
