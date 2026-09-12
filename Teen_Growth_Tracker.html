@@ -6398,16 +6398,26 @@ function loadStore(key, fallback) {
 function saveStore(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
 
 const DEFAULT_REWARDS = [
-  { id:'r1', tag:'FEATURED 🎮', icon:'🎮', name:'800 Robux Gift Code',            cost:800,  desc:'Digital gift card code for Roblox avatar skins, gamepasses & accessories!' },
-  { id:'r2', tag:'POPULAR ⏰',  icon:'⏰', name:'+1 Hr Extra Screen Time',        cost:150,  desc:'Extra hour of weekend gaming or watching YouTube / anime.' },
-  { id:'r3', tag:'FOOD & TREAT 🍕', icon:'🍕', name:'Friday Pizza & Movie Choice', cost:300,  desc:"Pick Friday night's dinner menu & movie to watch with family!" },
-  { id:'r4', tag:'GEAR 🎧',    icon:'🎧', name:'Pro Gaming Headset Upgrade',     cost:1500, desc:'High quality RGB surround sound headset for your gaming setup!' },
-  { id:'r5', tag:'PERK 🎟️',   icon:'🎟️', name:'Weekend Hangout / Sleepover Pass', cost:400, desc:'Host a weekend sleepover or go out with friends after school.' },
-  { id:'r6', tag:'AVATAR 🎨',  icon:'🎨', name:'VIP Avatar Customizer Unlock',   cost:200,  desc:'Unlock exclusive 3D anime & gaming avatar skins for your tracker profile!' }
+  { id:'r1', tag:'FEATURED 🎮', icon:'🎮', name:'800 Robux Gift Code',            cost:2400,  desc:'Digital gift card code for Roblox avatar skins, gamepasses & accessories!' },
+  { id:'r2', tag:'POPULAR ⏰',  icon:'⏰', name:'+1 Hr Extra Screen Time',        cost:600,  desc:'Extra hour of weekend gaming or watching YouTube / anime.' },
+  { id:'r3', tag:'FOOD & TREAT 🍕', icon:'🍕', name:'Friday Pizza & Movie Choice', cost:1100,  desc:"Pick Friday night's dinner menu & movie to watch with family!" },
+  { id:'r4', tag:'GEAR 🎧',    icon:'🎧', name:'Pro Gaming Headset Upgrade',     cost:3500, desc:'High quality RGB surround sound headset for your gaming setup!' },
+  { id:'r5', tag:'PERK 🎟️',   icon:'🎟️', name:'Weekend Hangout / Sleepover Pass', cost:1500, desc:'Host a weekend sleepover or go out with friends after school.' },
+  { id:'r6', tag:'AVATAR 🎨',  icon:'🎨', name:'VIP Avatar Customizer Unlock',   cost:750,  desc:'Unlock exclusive 3D anime & gaming avatar skins for your tracker profile!' }
 ];
 
 const BUILT_IN_TASKS = dailyTasks.slice();
 let rewardsList = loadStore(rewardsKey, DEFAULT_REWARDS);
+
+/* The original prices were reachable in a couple of days. Lift the built-in
+   ones to month-scale goals, once, without touching parent-added rewards. */
+const REWARD_PRICING_VERSION = 2;
+if (loadStore('teen-rewards-version', 1) < REWARD_PRICING_VERSION) {
+  const repriced = { r1:2400, r2:600, r3:1100, r4:3500, r5:1500, r6:750 };
+  rewardsList = rewardsList.map(r => repriced[r.id] ? Object.assign({}, r, { cost: repriced[r.id] }) : r);
+  saveStore(rewardsKey, rewardsList);
+  saveStore('teen-rewards-version', REWARD_PRICING_VERSION);
+}
 let redemptions = loadStore(redemptionsKey, []);
 /* Points are DERIVED from the tracked data, not a stored counter:
    +5 per completed task, +25 per perfect day, +50 per 7-day streak,
