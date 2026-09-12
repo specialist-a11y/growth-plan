@@ -3609,6 +3609,48 @@ h1,h2,h3,h4,.sidebar-brand-title,.stat-val,.hero h1{ font-family:Inter,-apple-sy
 .m-wide .chev{ margin-left:auto; color:#4f4f5a; font-size:16px; flex:none; }
 #moreModal .modal-card{ max-height:86vh; }
 
+/* ---------- hero avatar overlay (mobile only) ---------- */
+.hero-avatar{ display:none; }
+
+@keyframes avatarDance{
+  0%   { transform:translateY(0)    rotate(-3.5deg) scale(1); }
+  20%  { transform:translateY(-9px) rotate(2.5deg)  scale(1.02); }
+  40%  { transform:translateY(-1px) rotate(3.5deg)  scale(1); }
+  60%  { transform:translateY(-8px) rotate(-2deg)   scale(1.02); }
+  80%  { transform:translateY(-2px) rotate(-3deg)   scale(1); }
+  100% { transform:translateY(0)    rotate(-3.5deg) scale(1); }
+}
+
+@media (max-width:900px){
+  .hero{ position:relative !important; overflow:hidden !important; }
+  .hero-avatar.is-set{
+    display:block;
+    position:absolute;
+    right:-4px;
+    bottom:0;
+    height:74%;
+    width:auto;
+    max-width:40%;
+    object-fit:contain;
+    object-position:bottom right;
+    z-index:3;
+    pointer-events:none;
+    transform-origin:50% 100%;
+    animation:avatarDance 1.5s ease-in-out infinite;
+    filter:drop-shadow(0 12px 18px rgba(0,0,0,.6));
+  }
+  /* give the figure room so it never sits under the headline */
+  /* the figure takes the right ~40%, so tighten the copy to suit */
+  .hero:has(.hero-avatar.is-set) .hero-text-block{ max-width:58% !important; }
+  .hero:has(.hero-avatar.is-set) h1{ font-size:21px !important; line-height:1.15 !important; }
+  .hero:has(.hero-avatar.is-set) p{ font-size:11px !important; max-width:100% !important; margin-top:8px !important; }
+  .hero:has(.hero-avatar.is-set) .hero-subtitle-tag{ font-size:8.5px !important; letter-spacing:.18em !important; }
+  .hero:has(.hero-avatar.is-set) .synced-status-pill{ padding:7px 12px !important; font-size:11px !important; }
+  @media (prefers-reduced-motion:reduce){
+    .hero-avatar.is-set{ animation:none !important; }
+  }
+}
+
 /* ---------- avatars ---------- */
 .avatar-grid{ display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-top:16px; }
 .avatar-card{ background:var(--t-panel-2) !important; border:1px solid var(--t-line) !important; border-radius:var(--r-md) !important;
@@ -3890,6 +3932,7 @@ body.theme-sportscar .hero::after {
         </div>
       </div>
     </div>
+    <img id="heroAvatar" class="hero-avatar" alt="" />
     <div class="scrawl-text hero-scrawl-1">Discipline<br>creates<br>freedom</div>
     <div class="scrawl-text accent hero-scrawl-2">Better<br>days<br>ahead</div>
     <div class="hero-tag-quote"><div class="scrawl-text">"Small<br>steps<br>big<br>futures."</div></div>
@@ -4764,6 +4807,13 @@ function renderIdentity() {
   const name = childDisplayName();
   const el = document.getElementById('heroOwnerName');
   if (el) el.textContent = name ? (/s$/i.test(name) ? name + "'" : name + "'s") : "Your Teen's";
+
+  const heroAv = document.getElementById('heroAvatar');
+  if (heroAv) {
+    const pick = (typeof currentAvatar === 'function') ? currentAvatar() : null;
+    if (pick) { heroAv.src = pick.full; heroAv.alt = pick.name; heroAv.classList.add('is-set'); }
+    else { heroAv.removeAttribute('src'); heroAv.classList.remove('is-set'); }
+  }
 
   const avatar = document.getElementById('userAvatarInitials');
   if (avatar) {
