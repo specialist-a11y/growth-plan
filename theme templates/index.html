@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>1GAMMA Main-Template Theme Recreations</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#070a11;color:#fff;font-family:Inter,system-ui,sans-serif;padding:32px}
+main{max-width:1100px;margin:auto}
+h1{font-size:clamp(30px,5vw,52px);margin:0 0 10px}
+p{color:#aeb8c7;margin:0 0 26px;line-height:1.6}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.theme-card{display:flex;flex-direction:column;gap:8px;padding:20px;border-radius:18px;border:1px solid #2d3646;background:#111722;color:#fff;text-decoration:none;transition:.2s}
+.theme-card:hover{transform:translateY(-2px);border-color:#718096}
+.theme-card span{font-size:13px;color:#aeb8c7}
+</style>
+
+<style id="remove-hero-shoe">
+/* Remove the decorative sneaker/shoe SVG from the hero on every theme.
+   Theme photography remains untouched. */
+.hero-sneaker-art,
+.hero-sneaker-art svg,
+.hero .sneaker,
+.sneaker {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+</style>
+
+</head>
+<body>
+<main>
+<h1>1GAMMA Main-Template Themes</h1>
+<p>Each file is a full recreation of the uploaded Teen Growth Tracker main template, with the same app structure and functionality, but opening in its own theme and using a sharper, more vibrant hero treatment.</p>
+<div class="grid"><a class="theme-card" href="1gamma_street_basketball_main.html"><strong>Street Basketball</strong><span>Open full main-template version</span></a>
+<a class="theme-card" href="1gamma_tropical_wave_main.html"><strong>Tropical Wave</strong><span>Open full main-template version</span></a>
+<a class="theme-card" href="1gamma_music_vibes_main.html"><strong>Music Vibes</strong><span>Open full main-template version</span></a>
+<a class="theme-card" href="1gamma_urban_skate_main.html"><strong>Urban Skate</strong><span>Open full main-template version</span></a>
+<a class="theme-card" href="1gamma_sneaker_culture_main.html"><strong>Sneaker Culture</strong><span>Open full main-template version</span></a>
+<a class="theme-card" href="1gamma_dreamy_aura_main.html"><strong>Dreamy Aura</strong><span>Open full main-template version</span></a>
+<a class="theme-card" href="1gamma_gaming_zone_main.html"><strong>Gaming Zone</strong><span>Open full main-template version</span></a>
+<a class="theme-card" href="1gamma_cosmic_galaxy_main.html"><strong>Cosmic Galaxy</strong><span>Open full main-template version</span></a>
+<a class="theme-card" href="1gamma_sports_car_main.html"><strong>Sports Car</strong><span>Open full main-template version</span></a></div>
+</main>
+</body>
+</html>
