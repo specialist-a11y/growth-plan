@@ -4172,7 +4172,7 @@ body.theme-sportscar .hero::after {
 
 <!-- Adding the tracker to a phone's home screen, without any app store -->
 <div id="installBar" class="install-bar" hidden>
-  <span class="install-ico">⚡</span>
+  <span class="install-ico">🏫</span>
   <div class="install-copy"><b>Add 1GAMMA MB to your phone</b>
     <div class="meta" id="installHow">It opens like an app, and works without a signal.</div></div>
   <button class="action primary" id="installGo" onclick="doInstall()">Add to home screen</button>
@@ -4238,6 +4238,10 @@ body.theme-sportscar .hero::after {
       <li class="sidebar-nav-item" onclick="openParentDashboard()">
         <span class="sidebar-nav-item-icon">🔐</span>
         <span>Parent Dashboard</span>
+      </li>
+      <li class="sidebar-nav-item" id="sideInstall" onclick="installApp()">
+        <span class="sidebar-nav-item-icon">🏫</span>
+        <span>Download as app</span>
       </li>
     </ul>
   </div>
@@ -5038,6 +5042,11 @@ body.theme-sportscar .hero::after {
       <button class="m-wide" onclick="goMore('storePanel')">
         <div class="ic">🛍️</div>
         <div><strong>Store</strong><small>Spend points on themes, avatars and extras</small></div>
+        <span class="chev">›</span>
+      </button>
+      <button class="m-wide" id="moreInstall" onclick="closeModal('moreModal'); installApp()">
+        <div class="ic">🏫</div>
+        <div><strong>Download as app</strong><small>Keep it on your home screen, works offline</small></div>
         <span class="chev">›</span>
       </button>
       <button class="m-wide" onclick="closeModal('moreModal'); openParentDashboard()">
@@ -11086,18 +11095,47 @@ function dismissInstall() {
   const bar = document.getElementById('installBar');
   if (bar) bar.hidden = true;
 }
-function showInstallBar() {
+function installHowText() {
+  if (isIos()) return 'In Safari: tap Share (the box with an arrow), then "Add to Home Screen".';
+  if (deferredInstall) return 'It opens like an app, with its own icon, and works without a signal.';
+  if (location.protocol.indexOf('http') !== 0) return 'Open the tracker from its web address first — a page opened from a file cannot be added.';
+  return 'In your browser menu (⋮), choose "Install app" or "Add to Home screen".';
+}
+
+function showInstallBar(force) {
   const bar = document.getElementById('installBar');
-  if (!bar || isStandalone() || installDismissed() || gateNeeded() || demoMode()) return;
+  if (!bar || isStandalone()) return;
+  if (!force && (installDismissed() || gateNeeded() || demoMode())) return;
+  if (!force && !isIos() && !deferredInstall) return;      // nothing to offer unprompted
   const how = document.getElementById('installHow');
   const go = document.getElementById('installGo');
-  if (isIos()) {
-    if (how) how.textContent = 'In Safari: tap Share, then "Add to Home Screen".';
-    if (go) go.hidden = true;             // iOS gives us no button to press
-  } else if (!deferredInstall) {
-    return;                               // nothing to offer yet
-  }
+  if (how) how.textContent = installHowText();
+  if (go) go.hidden = !deferredInstall;                    // only offer a button that will work
   bar.hidden = false;
+}
+
+/* The "Download as app" entry in the menus: always does something useful,
+   whatever the phone is willing to do. */
+function installApp() {
+  if (isStandalone()) {
+    // an undeclared name would throw, so check the safe way
+    if (typeof toast === 'function') toast('🏫 It is already on your home screen.');
+    else alert('1GAMMA MB is already on your home screen.');
+    return;
+  }
+  if (deferredInstall) return doInstall();
+  showInstallBar(true);
+  const bar = document.getElementById('installBar');
+  if (bar) bar.scrollIntoView({ block: 'nearest' });
+}
+
+/* Once it is installed there is nothing to offer, so stop offering it. */
+function refreshInstallEntries() {
+  const on = !isStandalone();
+  ['sideInstall', 'moreInstall'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.hidden = !on;
+  });
 }
 async function doInstall() {
   if (!deferredInstall) return;
@@ -11113,7 +11151,7 @@ window.addEventListener('beforeinstallprompt', e => {
   deferredInstall = e;
   showInstallBar();
 });
-window.addEventListener('appinstalled', () => { dismissInstall(); deferredInstall = null; });
+window.addEventListener('appinstalled', () => { dismissInstall(); deferredInstall = null; refreshInstallEntries(); });
 
 /* Offline support, so a morning routine can be ticked off on the bus. */
 if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
@@ -11573,6 +11611,7 @@ renderAvatarUI();
 renderDemoBar();
 renderGate();
 checkChildAge();
+refreshInstallEntries();
 setTimeout(showInstallBar, 2500);   // let them see the app before inviting them to keep it
 if (!earnedMilestones() || !Object.keys(earnedMilestones()).length) checkMilestones(false);
 applyMilestoneLook();
