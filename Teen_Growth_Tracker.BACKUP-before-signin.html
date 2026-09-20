@@ -3810,43 +3810,6 @@ body.theme-sportscar .hero::after {
 </style>
 </head>
 <body>
-<style>
-/* sign-in screen shown before the tracker */
-#gateScreen{ position:fixed; inset:0; z-index:62; display:flex; align-items:center; justify-content:center; padding:20px;
-  background:linear-gradient(160deg,#0a0b0f 0%, #12131a 55%, #0a0b0f 100%); overflow:auto; }
-#gateScreen[hidden]{ display:none !important; }
-#gateScreen .gate-card{ width:min(440px,100%); display:flex; flex-direction:column; gap:14px; padding:30px 28px 26px;
-  border-radius:24px; background:#111114; border:1px solid #26262e; box-shadow:0 30px 70px -30px rgba(0,0,0,.9); }
-#gateScreen .gate-brand{ display:flex; align-items:center; gap:12px; }
-#gateScreen .gate-mark{ width:46px; height:46px; border-radius:14px; display:grid; place-items:center; font-size:23px;
-  background:linear-gradient(135deg,#ff2b33,#c8101a); }
-#gateScreen h1{ margin:0; font-size:23px; font-weight:900; letter-spacing:-.5px; color:#f4f4f6; font-family:Inter,-apple-system,sans-serif; }
-#gateScreen .gate-sub{ font-size:13px; color:#8d8d99; margin:0; }
-#gateScreen .gate-lead{ font-size:14.5px; color:#f4f4f6; margin:6px 0 2px; line-height:1.5; }
-#gateScreen button{ width:100%; border-radius:14px; padding:13px 16px; font-size:15px; font-weight:800; cursor:pointer; font-family:inherit; }
-#gateScreen .gate-in{ border:none; background:linear-gradient(135deg,#ff2b33,#c8101a); color:#fff; }
-#gateScreen .gate-alt{ border:1px solid #2c2c36; background:#17171c; color:#f4f4f6; }
-#gateScreen .gate-foot{ font-size:12.5px; color:#8d8d99; text-align:center; margin:4px 0 0; }
-body.gated{ overflow:hidden; }
-body.gated #mobileBottomNav, body.gated .mobile-quick-nav{ display:none !important; }
-</style>
-
-<div id="gateScreen">
-  <div class="gate-card">
-    <div class="gate-brand">
-      <span class="gate-mark" aria-hidden="true">⚡</span>
-      <div>
-        <h1>1GAMMA</h1>
-        <p class="gate-sub">Daily growth &amp; routine tracker</p>
-      </div>
-    </div>
-    <p class="gate-lead">Sign in to see the tracker and keep your progress backed up.</p>
-    <button type="button" class="gate-in" onclick="openSettings()">🔑 Sign in or create an account</button>
-    <button type="button" class="gate-alt" onclick="loginAsGuest()">👤 Continue on this device</button>
-    <p class="gate-foot">Your progress stays with whichever you choose.</p>
-  </div>
-</div>
-
 <div id="appBgPhotoLayer"></div>
 <div id="appBgOverlayLayer"></div>
 
@@ -4881,16 +4844,7 @@ function saveChildName() {
   authMsg(name ? `🟢 Saved. The tracker now shows <b>${name}</b>.` : 'Name cleared.', true);
 }
 
-function renderGate() {
-  const gate = document.getElementById('gateScreen');
-  if (!gate) return;
-  const needed = !session;                 // signed in, local profile, either is fine
-  gate.hidden = !needed;
-  document.body.classList.toggle('gated', needed);
-}
-
 function updateAuthUI() {
-  renderGate();
   renderIdentity();
   const childBox = document.getElementById('childNameBox');
   if (childBox) childBox.style.display = session ? 'block' : 'none';
@@ -7100,7 +7054,6 @@ function renderThemeGrid() {
 loadThemeConfig();
 monthState = loadLocal(currentMonth);
 renderAll();
-renderGate();
 updateAuthUI();
 renderRewardsGrid();
 updatePointsDisplay();
