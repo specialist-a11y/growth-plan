@@ -3811,6 +3811,29 @@ body.demo-on #appSidebar{ top:var(--demo-bar-h,46px) !important; height:calc(100
 .tt-preview b{ display:block; margin-bottom:5px; font-size:12px; color:var(--accent); }
 .tt-preview .meta{ font-size:11.5px; }
 @media (max-width:760px){ .tt-preview{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
+/* long lists inside a tab stay browsable on a phone */
+@media (max-width:760px){
+  .pd-page .qw-row{ gap:6px; }
+  /* nine reward cards at 250-400px each is most of the scrolling in this tab */
+  .pd-page #parentRewards .item{ padding:10px 12px !important; gap:8px !important; margin-bottom:6px !important; }
+  .pd-page #parentRewards .item .meta{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .pd-page #parentRewards .item .action{ min-height:38px !important; padding:8px 12px !important; }
+}
+/* one section at a time, chosen from a bar that stays put */
+.pd-tabs{ position:sticky; top:0; z-index:3; display:flex; gap:8px; padding:12px 0 10px; margin-bottom:6px;
+  background:var(--t-panel,#14141a); border-bottom:1px solid var(--t-line,#26262e); overflow-x:auto; scrollbar-width:none; }
+.pd-tabs::-webkit-scrollbar{ display:none; }
+.pd-tabs button{ flex:0 0 auto; display:inline-flex; align-items:center; gap:7px; white-space:nowrap; border:1px solid var(--t-line,#26262e);
+  background:var(--t-panel-2,#1b1b21); color:var(--t-text,#f2f2f5); font:inherit; font-size:13px; font-weight:700;
+  padding:10px 14px; border-radius:99px; cursor:pointer; }
+.pd-tabs button:hover{ border-color:var(--accent); }
+.pd-tabs button.on{ background:linear-gradient(96deg,var(--accent),var(--accent-2)); border-color:transparent; color:#fff; }
+.pd-page .pd-group[hidden]{ display:none !important; }
+.pd-page .pd-group > summary{ display:none; }        /* the tab bar names the section */
+@media (max-width:760px){
+  .pd-tabs{ margin-inline:-2px; padding-inline:2px; }
+  .pd-tabs button{ font-size:12.5px; padding:10px 12px; }
+}
 /* the parent dashboard as a page rather than a pop-up */
 .pd-page{ padding-bottom:28px; }
 .pd-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:6px; }
@@ -4572,11 +4595,13 @@ body.theme-sportscar .hero::after {
 
     <!-- unlocked -->
     <div id="parentBody" style="display:none;">
-      <div class="pd-jump" id="pdJump">
-        <button type="button" onclick="openParentGroup('pgNow')">✅ Needs you<span class="pd-badge" id="pgApprovalBadge" hidden>0</span></button>
-        <button type="button" onclick="openParentGroup('pgRoutine')">📋 Routine &amp; rewards</button>
-        <button type="button" onclick="openParentGroup('pgSchool')">🏫 School &amp; child</button>
-        <button type="button" onclick="openParentGroup('pgExtras')">⚙️ Extras &amp; settings</button>
+      <div class="pd-tabs" id="pdJump" role="tablist">
+        <button type="button" role="tab" data-sec="pgNow" onclick="showParentSection('pgNow')">✅ Needs you<span class="pd-badge" id="pgApprovalBadge" hidden>0</span></button>
+        <button type="button" role="tab" data-sec="pgRoutine" onclick="showParentSection('pgRoutine')">📋 Routine</button>
+        <button type="button" role="tab" data-sec="pgRewards" onclick="showParentSection('pgRewards')">🎁 Rewards</button>
+        <button type="button" role="tab" data-sec="pgDeadlines" onclick="showParentSection('pgDeadlines')">⏰ Deadlines</button>
+        <button type="button" role="tab" data-sec="pgSchool" onclick="showParentSection('pgSchool')">🏫 School</button>
+        <button type="button" role="tab" data-sec="pgSettings" onclick="showParentSection('pgSettings')">⚙️ Settings</button>
       </div>
 
       <details class="pd-group" id="pgNow" open>
@@ -4591,7 +4616,7 @@ body.theme-sportscar .hero::after {
       </details>
 
       <details class="pd-group" id="pgRoutine" open>
-        <summary>📋 Routine &amp; rewards<span class="pd-hint">what your child does, earns and works towards</span></summary>
+        <summary>📋 Daily routine<span class="pd-hint">the tasks your child ticks off each day</span></summary>
       <h3 style="font-size:16px; font-weight:800; margin:22px 0 10px;">📋 Daily Routine Tasks</h3>
       <div id="parentTasks"></div>
       <div style="display:grid; grid-template-columns:2fr 1fr; gap:10px; margin-top:10px;">
@@ -4614,6 +4639,10 @@ body.theme-sportscar .hero::after {
         <button class="action ghost" onclick="exportHomeworkCsv()">📚 Homework CSV</button>
       </div>
 
+      </details>
+
+      <details class="pd-group" id="pgRewards" open>
+        <summary>🎁 Rewards &amp; store<span class="pd-hint">what the points are worth, and what can be bought with them</span></summary>
       <h3 style="font-size:16px; font-weight:800; margin:22px 0 10px;">🎁 Rewards</h3>
       <div class="meta" style="margin-bottom:10px;">Game cards come in four sizes, from 1,000 points for a $10 card up to 7,500 for a $100 one, so there's something a few good weeks away and something worth months of effort. Buy whichever card your child's game store sells and enter the code together. Edit any reward to change its wording or price.</div>
       <div id="parentRewards"></div>
@@ -4626,6 +4655,24 @@ body.theme-sportscar .hero::after {
       <div id="newRewardIcons"></div>
       <button class="action ghost" style="margin-top:10px;" onclick="addReward()">＋ Add Reward</button>
 
+      <h3 id="storeSection" style="font-size:16px; font-weight:800; margin:22px 0 6px;">🛍️ Points Store</h3>
+      <div class="meta" style="margin-bottom:10px;">Your child can spend earned points on themes, avatars and small extras. Buying is instant and costs no real money. Real-world rewards still need your approval.</div>
+      <label style="display:flex; align-items:center; gap:8px; font-weight:700; font-size:13px; margin-bottom:10px;">
+        <input id="storeEnabled" type="checkbox" onchange="setStoreEnabled(this.checked)" /> Allow the store
+      </label>
+      <div style="display:grid; grid-template-columns:2fr 1fr; gap:10px; align-items:end;">
+        <div>
+          <label style="font-weight:700; font-size:13px;">Give an item free</label>
+          <select id="storeGiftPick" class="month" style="width:100%; margin-top:4px;"></select>
+        </div>
+        <button class="action ghost" onclick="giftStoreItem()">🎁 Give it</button>
+      </div>
+      <div id="storeParentLog" style="margin-top:10px;"></div>
+
+      </details>
+
+      <details class="pd-group" id="pgDeadlines" open>
+        <summary>⏰ Deadlines<span class="pd-hint">the times tasks must be done by to earn points</span></summary>
       <h3 id="dlSection" style="font-size:16px; font-weight:800; margin:22px 0 6px;">⏰ Deadlines</h3>
       <div class="meta" style="margin-bottom:10px;">Give tasks a time to be done by. A task ticked late still shows as done, but earns no points and doesn't count towards the perfect-day bonus or streaks. Nothing is ever taken away. Leave a time empty for no deadline.</div>
       <label style="display:flex; align-items:center; gap:8px; font-weight:700; font-size:13px; margin-bottom:10px;">
@@ -4635,6 +4682,7 @@ body.theme-sportscar .hero::after {
       <div id="dlToday" style="margin-top:10px;"></div>
 
       </details>
+
 
       <details class="pd-group" id="pgSchool">
         <summary>🏫 School &amp; child<span class="pd-hint">timetable, name, age and country</span></summary>
@@ -4709,22 +4757,8 @@ body.theme-sportscar .hero::after {
 
       </details>
 
-      <details class="pd-group" id="pgExtras">
-        <summary>⚙️ Extras &amp; settings<span class="pd-hint">points store, weekly quotes, PIN, password and backup</span></summary>
-      <h3 id="storeSection" style="font-size:16px; font-weight:800; margin:22px 0 6px;">🛍️ Points Store</h3>
-      <div class="meta" style="margin-bottom:10px;">Your child can spend earned points on themes, avatars and small extras. Buying is instant and costs no real money. Real-world rewards still need your approval.</div>
-      <label style="display:flex; align-items:center; gap:8px; font-weight:700; font-size:13px; margin-bottom:10px;">
-        <input id="storeEnabled" type="checkbox" onchange="setStoreEnabled(this.checked)" /> Allow the store
-      </label>
-      <div style="display:grid; grid-template-columns:2fr 1fr; gap:10px; align-items:end;">
-        <div>
-          <label style="font-weight:700; font-size:13px;">Give an item free</label>
-          <select id="storeGiftPick" class="month" style="width:100%; margin-top:4px;"></select>
-        </div>
-        <button class="action ghost" onclick="giftStoreItem()">🎁 Give it</button>
-      </div>
-      <div id="storeParentLog" style="margin-top:10px;"></div>
-
+      <details class="pd-group" id="pgSettings" open>
+        <summary>⚙️ Settings<span class="pd-hint">weekly quotes, PIN, password and backup</span></summary>
       <h3 id="qwSection" style="font-size:16px; font-weight:800; margin:22px 0 6px;">💬 Weekly Motivation Quotes</h3>
       <div class="meta" style="margin-bottom:10px;">One quote is shown at the top of the tracker each week. It changes every Monday, then starts again at the top of the list.</div>
       <label style="display:flex; align-items:center; gap:8px; font-weight:700; font-size:13px; margin-bottom:10px;">
@@ -4764,6 +4798,7 @@ body.theme-sportscar .hero::after {
         </div>
       </div>
       </details>
+
 
     </div>
     </div>
@@ -7864,6 +7899,9 @@ function qNowText() {
   if (!q) return 'No quotes yet — add one to show a quote card.';
   return 'Showing this week: “' + q.text + '”' + (q.author.trim() ? ' — ' + q.author : '');
 }
+let qwShowAll = false;
+function qwToggleAll() { qwShowAll = !qwShowAll; renderParentQuotes(); }
+
 function renderParentQuotes() {
   const box = document.getElementById('qwList');
   if (!box) return;
@@ -7873,12 +7911,22 @@ function renderParentQuotes() {
   const inp = (i, field, val, ph) =>
     `<input type="text" data-qf="${field}" value="${escapeHTML(val)}" placeholder="${ph}" onchange="qSetField(${i}, '${field}', this.value)"
       style="width:100%; border:1px solid var(--border); border-radius:12px; padding:9px;" />`;
-  box.innerHTML = quotesConfig.list.length
-    ? quotesConfig.list.map((q, i) => `<div class="qw-row${current && q === current ? ' qw-current' : ''}">
+  // a full year is 52 rows; show this week and the next few unless asked for all
+  const list = quotesConfig.list;
+  const currentIdx = current ? list.indexOf(current) : -1;
+  const PREVIEW = 4;
+  const showAll = qwShowAll || list.length <= PREVIEW + 1;
+  const from = showAll ? 0 : Math.max(0, currentIdx);
+  const shown = showAll ? list.map((q, i) => [q, i]) : list.map((q, i) => [q, i]).slice(from, from + PREVIEW);
+  box.innerHTML = list.length
+    ? shown.map(([q, i]) => `<div class="qw-row${current && q === current ? ' qw-current' : ''}">
         ${inp(i, 'text', q.text, 'Quote')}
         ${inp(i, 'author', q.author, 'Who said it (optional)')}
         <button class="action ghost tt-mini" onclick="qRemove(${i})" title="Remove">✕</button>
       </div>`).join('')
+      + (list.length > shown.length || (showAll && list.length > PREVIEW + 1)
+          ? `<button class="action ghost" style="margin-top:10px;" onclick="qwToggleAll()">${showAll
+              ? 'Show fewer' : `Show all ${list.length} weeks`}</button>` : '')
     : `<div class="meta">No quotes yet. Add one below, or restore the built-in set.</div>`;
   const now = document.getElementById('qwNow');
   if (now) now.textContent = qNowText();
@@ -9649,6 +9697,7 @@ let parentUnlocked = false;
 function openParentDashboard() {
   const cfg = parentConfig();
   parentUnlocked = false;
+  if (!parentFocusSection) parentSection = 'pgNow';
   switchMainTab('parentPanel');
   const panel = document.getElementById('parentPanel');
   if (panel) panel.scrollIntoView({ block: 'start' });
@@ -9809,11 +9858,39 @@ function downloadAllData() {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
-function openParentGroup(id) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.open = true;
-  setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 40);
+/* The dashboard used to be one long page of collapsible groups: twelve phone
+   screens before a parent had opened anything. Only one section is shown at a
+   time now, so each is a screen or two. */
+const PARENT_SECTIONS = ['pgNow', 'pgRoutine', 'pgRewards', 'pgDeadlines', 'pgSchool', 'pgSettings'];
+let parentSection = 'pgNow';
+
+function showParentSection(id, keepScroll) {
+  if (PARENT_SECTIONS.indexOf(id) === -1) id = 'pgNow';
+  parentSection = id;
+  PARENT_SECTIONS.forEach(sec => {
+    const el = document.getElementById(sec);
+    if (!el) return;
+    el.hidden = sec !== id;
+    el.open = true;                       // the tab bar does the opening now
+  });
+  document.querySelectorAll('#pdJump button[data-sec]').forEach(b => {
+    const on = b.dataset.sec === id;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-selected', String(on));
+  });
+  if (!keepScroll) {
+    const top = document.getElementById('parentPanel');
+    if (top) top.scrollIntoView({ block: 'start' });
+  }
+}
+/* kept for anything that still asks for a group by name */
+function openParentGroup(id) { showParentSection(id); }
+/* which tab is a given control on? */
+function parentSectionOf(el) {
+  for (let n = el; n; n = n.parentElement) {
+    if (n.id && PARENT_SECTIONS.indexOf(n.id) !== -1) return n.id;
+  }
+  return null;
 }
 
 function parentMsg(text, ok) {
@@ -9867,16 +9944,11 @@ function renderParentDashboard() {
   renderParentTimetable();
   renderParentQuotes();
   renderParentSecurity();
-  if (parentFocusSection) {
-    const target = document.getElementById(parentFocusSection);
-    parentFocusSection = null;
-    if (target) {
-      for (let el = target.parentElement; el; el = el.parentElement) {
-        if (el.tagName === 'DETAILS') el.open = true;      // a section inside a closed group
-      }
-      setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
-    }
-  }
+  const focus = parentFocusSection;
+  parentFocusSection = null;
+  const target = focus ? document.getElementById(focus) : null;
+  showParentSection(target ? (parentSectionOf(target) || parentSection) : parentSection, !!target);
+  if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
   const cfg = parentConfig() || {};
   const who = document.getElementById('parentWho');
   if (who) who.textContent = cfg.parentName ? `Signed in as ${cfg.parentName}` : '';
