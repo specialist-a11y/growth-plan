@@ -3600,16 +3600,16 @@ h1,h2,h3,h4,.sidebar-brand-title,.stat-val,.hero h1{ font-family:Inter,-apple-sy
   color:var(--t-text) !important; outline:none !important; box-shadow:none !important; font-family:inherit !important; }
 .modal-card input::placeholder, .modal-card textarea::placeholder{ color:#5e5e69 !important; }
 .modal-card input:focus, .modal-card select:focus, .modal-card textarea:focus{ border-color:#4a4a58 !important; }
-#parentModal .item{ gap:12px; }
-#parentModal .akpi b{ font-size:22px !important; }
-#parentModal h3{ color:var(--t-text) !important; }
+#parentPanel .item{ gap:12px; }
+#parentPanel .akpi b{ font-size:22px !important; }
+#parentPanel h3{ color:var(--t-text) !important; }
 @media (max-width:900px){
   /* only the approval rows (two buttons) need to stack; single-button rows stay inline */
   #parentApprovals .item{ flex-direction:column !important; align-items:stretch !important; }
   #parentApprovals .item > div:last-child{ display:flex; gap:8px; }
   #parentApprovals .item .action{ flex:1; justify-content:center; }
-  #parentModal .analytics-kpis{ grid-template-columns:1fr 1fr !important; }
-  #parentModal div[style*="grid-template-columns:2fr 1fr"]{ grid-template-columns:1fr !important; }
+  #parentPanel .analytics-kpis{ grid-template-columns:1fr 1fr !important; }
+  #parentPanel div[style*="grid-template-columns:2fr 1fr"]{ grid-template-columns:1fr !important; }
 }
 /* ---------- "More" menu ---------- */
 .more-list{ display:flex; flex-direction:column; gap:10px; margin-top:16px; }
@@ -3811,6 +3811,25 @@ body.demo-on #appSidebar{ top:var(--demo-bar-h,46px) !important; height:calc(100
 .tt-preview b{ display:block; margin-bottom:5px; font-size:12px; color:var(--accent); }
 .tt-preview .meta{ font-size:11.5px; }
 @media (max-width:760px){ .tt-preview{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
+/* the parent dashboard as a page rather than a pop-up */
+.pd-page{ padding-bottom:28px; }
+.pd-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:6px; }
+.pd-top-acts{ display:flex; gap:8px; flex-wrap:wrap; }
+/* a 28px "remove" button is fiddly with a mouse too, not just a thumb */
+.pd-page .action.tt-mini{ min-height:32px !important; }
+@media (max-width:760px){
+  .pd-top{ flex-direction:column; align-items:stretch; }
+  .pd-top-acts{ width:100%; }
+  .pd-top-acts .action{ flex:1 1 auto; text-align:center; }
+  .pd-page .pd-group summary{ padding:14px 12px; }
+  /* .section input[type="text"] is more specific than .pd-page input and uses
+     !important, so this has to out-rank it by id to win */
+  #parentPanel input, #parentPanel select, #parentPanel textarea{ font-size:16px !important; }  /* no zoom-on-focus on iOS */
+  .pd-page .action{ min-height:44px !important; }
+  .pd-page .action.tt-mini{ min-height:36px !important; min-width:36px !important; padding:6px 10px !important; }
+  .pd-page div[style*="grid-template-columns:1fr 1fr"]{ grid-template-columns:1fr !important; }
+  .pd-page div[style*="grid-template-columns:repeat(3"]{ grid-template-columns:1fr !important; }
+}
 /* the shop's toolbar */
 .store-toolbar{ display:flex; flex-direction:column; gap:10px; margin:14px 0 4px; }
 .store-chips{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
@@ -3883,7 +3902,7 @@ body.demo-on #appSidebar{ top:var(--demo-bar-h,46px) !important; height:calc(100
 .dl-row input[type="time"]{ width:100%; border:1px solid var(--t-line,#26262e); border-radius:12px; padding:8px 10px; background:#101015; color:var(--t-text,#f2f2f5); font:inherit; color-scheme:dark; }
 @media (max-width:600px){ .dl-row{ grid-template-columns:1fr 1fr; } .dl-row > span:first-child{ grid-column:1 / -1; } }
 /* account: sign in / create account / reset */
-#settingsModal [hidden], #parentModal [hidden]{ display:none !important; }
+#settingsModal [hidden], #parentPanel [hidden]{ display:none !important; }
 .auth-tabs{ display:flex; gap:6px; padding:4px; margin-bottom:14px; border-radius:14px; background:var(--t-panel-2,#1b1b21); border:1px solid var(--t-line,#26262e); }
 .auth-tab{ flex:1; border:0; background:transparent; color:var(--t-muted,#a8a8b3); font:inherit; font-size:14px; font-weight:700; padding:10px 12px; border-radius:10px; cursor:pointer; }
 .auth-tab.on{ background:linear-gradient(96deg,var(--accent),var(--accent-2)); color:#fff; }
@@ -4488,6 +4507,268 @@ body.theme-sportscar .hero::after {
       </div>
     </div>
   </section>
+  <!-- Parent Dashboard: a page of its own, not a pop-up -->
+  <section id="parentPanel" class="panel">
+    <div class="section pd-page">
+    <div class="pd-top">
+      <div>
+        <h2 style="margin:0; font-size:24px;">🔐 Parent Dashboard</h2>
+        <div class="meta" id="parentWho">Progress, rewards, routine tasks &amp; approvals.</div>
+      </div>
+      <div class="pd-top-acts">
+        <button class="action ghost" id="parentLockBtn" onclick="lockParentDashboard()" hidden>🔒 Lock</button>
+        <button class="action ghost" onclick="switchMainTab('todayPanel')">← Back to the tracker</button>
+      </div>
+    </div>
+
+    <div id="parentMessage" class="notice" style="display:none; margin-top:14px;"></div>
+
+    <!-- first run: create the PIN -->
+    <div id="parentSetup" style="display:none; margin-top:14px;">
+      <div class="meta" style="margin-bottom:10px;">Set a PIN so only you can open this dashboard.</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
+        <div><label style="font-weight:700; font-size:13px;">Child's Name</label><input id="newChildName" type="text"  style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="e.g. Jayden" /></div>
+        <div><label style="font-weight:700; font-size:13px;">Parent's Name</label><input id="newParentName" type="text"  style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="e.g. Katrina" /></div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px">
+        <div><label style="font-weight:700; font-size:13px;">Country</label><select id="newCountry" data-country-select style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;"></select></div>
+        <div><label style="font-weight:700; font-size:13px;">Child's Age</label><select id="newChildAge" data-age-select style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;"></select></div>
+      </div>
+      <div style="margin-top:12px"><label style="font-weight:700; font-size:13px;">Create PIN (4-8 digits)</label><input id="newParentPin" type="password" inputmode="numeric" maxlength="8" onkeydown="if(event.key===&#39;Enter&#39;) createParentPin()" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="••••" /></div>
+      <button class="action primary" style="width:100%; margin-top:14px;" onclick="createParentPin()">🔐 Set PIN & Open Dashboard</button>
+    </div>
+
+    <!-- returning: unlock -->
+    <div id="parentGate" style="display:none; margin-top:14px;">
+      <label style="font-weight:700; font-size:13px;">Enter Parent PIN</label>
+      <input id="parentPinInput" type="password" inputmode="numeric" maxlength="8" onkeydown="if(event.key===&#39;Enter&#39;) unlockParentDashboard()" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="••••" />
+      <button class="action primary" style="width:100%; margin-top:14px;" onclick="unlockParentDashboard()">Unlock</button>
+      <div class="auth-links" style="margin-top:10px;"><button type="button" class="link-btn" onclick="startPinReset()">Forgot PIN?</button></div>
+
+      <div id="pinResetBox" hidden>
+        <div id="pinResetCloud" hidden>
+          <b>Reset the parent PIN</b>
+          <div class="meta">Confirm it's you with the password for <b id="pinResetEmail"></b>, then choose a new PIN.</div>
+          <input id="pinResetPassword" type="password" autocomplete="current-password" placeholder="Account password" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" />
+          <div class="auth-grid">
+            <input id="pinResetNew" type="password" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="New PIN (4–8 digits)" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" />
+            <input id="pinResetNew2" type="password" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="Type the new PIN again" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" />
+          </div>
+          <button class="action primary" onclick="resetPinWithPassword()">Reset PIN</button>
+          <button type="button" class="link-btn" onclick="showForgotPasswordFromPin()">Forgot the password too?</button>
+        </div>
+        <div id="pinResetLocal" hidden>
+          <b>Reset the parent PIN</b>
+          <div class="meta">This profile isn't linked to an email account, so there's no password to confirm who you are. Anyone using this device could reset it, so the dashboard will show when it was last reset.</div>
+          <div class="auth-grid">
+            <input id="pinResetLocalNew" type="password" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="New PIN (4–8 digits)" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" />
+            <input id="pinResetLocalNew2" type="password" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="Type the new PIN again" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" />
+          </div>
+          <button class="action primary" onclick="resetPinLocal()">Reset PIN</button>
+        </div>
+        <button type="button" class="link-btn" onclick="cancelPinReset()">Cancel</button>
+      </div>
+    </div>
+
+    <!-- unlocked -->
+    <div id="parentBody" style="display:none;">
+      <div class="pd-jump" id="pdJump">
+        <button type="button" onclick="openParentGroup('pgNow')">✅ Needs you<span class="pd-badge" id="pgApprovalBadge" hidden>0</span></button>
+        <button type="button" onclick="openParentGroup('pgRoutine')">📋 Routine &amp; rewards</button>
+        <button type="button" onclick="openParentGroup('pgSchool')">🏫 School &amp; child</button>
+        <button type="button" onclick="openParentGroup('pgExtras')">⚙️ Extras &amp; settings</button>
+      </div>
+
+      <details class="pd-group" id="pgNow" open>
+        <summary>✅ Needs you now<span class="pd-hint">rewards waiting, and how the month is going</span></summary>
+      <div id="ageNotice" class="pd-notice" hidden></div>
+      <h3 style="font-size:16px; font-weight:800; margin:22px 0 10px;">✅ Reward Approvals</h3>
+      <div id="parentApprovals"></div>
+
+      <h3 style="font-size:16px; font-weight:800; margin:18px 0 10px;">📊 This Month at a Glance</h3>
+      <div id="parentProgress"></div>
+
+      </details>
+
+      <details class="pd-group" id="pgRoutine" open>
+        <summary>📋 Routine &amp; rewards<span class="pd-hint">what your child does, earns and works towards</span></summary>
+      <h3 style="font-size:16px; font-weight:800; margin:22px 0 10px;">📋 Daily Routine Tasks</h3>
+      <div id="parentTasks"></div>
+      <div style="display:grid; grid-template-columns:2fr 1fr; gap:10px; margin-top:10px;">
+        <div><input id="newTaskName" type="text"  style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="Task name, e.g. 🎹 Piano practice" /></div>
+        <div>
+          <select id="newTaskCat" class="month" style="width:100%;">
+            <option value="morning">Morning routine</option>
+            <option value="chores">After school &amp; chores</option>
+            <option value="tidy">Room tidy</option>
+            <option value="laundry">Laundry (weekend)</option>
+            <option value="evening">Evening</option>
+            <option value="weekly">Weekly targets</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; margin-top:10px;">
+        <button class="action ghost" onclick="addTask()">＋ Add Task</button>
+        <button class="action ghost" onclick="resetTasksToDefault()">↺ Restore Default Routine</button>
+        <button class="action ghost" onclick="toggleTaskImport()">📥 Import tasks</button>
+        <button class="action ghost" onclick="exportHomeworkCsv()">📚 Homework CSV</button>
+      </div>
+
+      <h3 style="font-size:16px; font-weight:800; margin:22px 0 10px;">🎁 Rewards</h3>
+      <div class="meta" style="margin-bottom:10px;">Game cards come in four sizes, from 1,000 points for a $10 card up to 7,500 for a $100 one, so there's something a few good weeks away and something worth months of effort. Buy whichever card your child's game store sells and enter the code together. Edit any reward to change its wording or price.</div>
+      <div id="parentRewards"></div>
+      <div style="display:grid; grid-template-columns:2fr 1fr; gap:10px; margin-top:10px;">
+        <div><input id="newRewardName" type="text"  style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="Reward name" /></div>
+        <div><input id="newRewardCost" type="number"  style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="Cost in PTS" /></div>
+      </div>
+      <div style="margin-top:10px;"><input id="newRewardDesc" type="text"  style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="Short description (optional)" /></div>
+      <label style="display:block; font-weight:700; font-size:13px; margin-top:10px;">Pick an icon</label>
+      <div id="newRewardIcons"></div>
+      <button class="action ghost" style="margin-top:10px;" onclick="addReward()">＋ Add Reward</button>
+
+      <h3 id="dlSection" style="font-size:16px; font-weight:800; margin:22px 0 6px;">⏰ Deadlines</h3>
+      <div class="meta" style="margin-bottom:10px;">Give tasks a time to be done by. A task ticked late still shows as done, but earns no points and doesn't count towards the perfect-day bonus or streaks. Nothing is ever taken away. Leave a time empty for no deadline.</div>
+      <label style="display:flex; align-items:center; gap:8px; font-weight:700; font-size:13px; margin-bottom:10px;">
+        <input id="dlEnabled" type="checkbox" onchange="setDeadlinesEnabled(this.checked)" /> Use deadlines
+      </label>
+      <div id="dlGrid"></div>
+      <div id="dlToday" style="margin-top:10px;"></div>
+
+      </details>
+
+      <details class="pd-group" id="pgSchool">
+        <summary>🏫 School &amp; child<span class="pd-hint">timetable, name, age and country</span></summary>
+      <h3 id="ttSection" style="font-size:16px; font-weight:800; margin:22px 0 6px;">🏫 School &amp; Timetable</h3>
+      <div class="meta" style="margin-bottom:10px;">Your child's school and weekly timetable. Leave it empty if they don't have a fixed timetable.</div>
+      <div id="ttDetails" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+        <div><label style="font-weight:700; font-size:13px;">School</label><input id="ttSchool" type="text" onchange="saveTimetableDetails()" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="e.g. Riverside Secondary" /></div>
+        <div><label style="font-weight:700; font-size:13px;">Class</label><input id="ttClass" type="text" onchange="saveTimetableDetails()" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="e.g. Form 2B" /></div>
+        <div><label style="font-weight:700; font-size:13px;">Form teacher</label><input id="ttTeacher" type="text" onchange="saveTimetableDetails()" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="e.g. Ms. Clarke" /></div>
+      </div>
+      <div id="ttDayTabs" style="display:flex; gap:6px; margin-top:14px; flex-wrap:wrap;"></div>
+      <div id="ttDayEditor" style="margin-top:12px;"></div>
+      <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
+        <button class="action ghost" onclick="ttAddSlot('class')">＋ Add Period</button>
+        <button class="action ghost" onclick="ttAddSlot('break')">＋ Add Break</button>
+        <button class="action ghost" onclick="ttClearAll()">🗑 Remove Timetable</button>
+        <button class="action ghost" onclick="toggleTtImport()">📥 Import a timetable</button>
+        <button class="action ghost" onclick="ttDownloadTemplate()">⬇ CSV template</button>
+        <button class="action ghost" onclick="ttDownloadCurrent()">⬇ Export timetable</button>
+      </div>
+
+      <div id="ttImport" hidden>
+        <div class="meta" style="margin:10px 0 8px;">Copy the timetable out of a spreadsheet and paste it here, or choose a .csv file. Either layout works: one row per day, or a grid with the days across the top. Write a room or teacher in brackets, like <code>Maths (Ms. K; Rm 4)</code> — a semicolon, since a comma would start a new column.</div>
+        <textarea id="ttImportText" rows="6" placeholder="Monday, Maths (Ms. K, Rm 4), English, Lunch, Science&#10;Tuesday, Spanish, History, Lunch, PE" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; font-family:var(--mono, monospace); font-size:13px;"></textarea>
+        <div style="display:flex; gap:10px; margin-top:8px; flex-wrap:wrap; align-items:center;">
+          <input id="ttImportFile" type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" onchange="ttImportFromFile(this)" style="font-size:13px;" />
+          <button class="action ghost" onclick="ttPreviewImport()">Check it</button>
+          <button class="action primary" id="ttImportApply" onclick="ttApplyImport()" disabled>Use this timetable</button>
+        </div>
+        <div class="csv-help">
+          <b>Or work in a spreadsheet.</b> The template has one lesson per row:
+          <code>Day, Subject, Teacher, Room, Time</code>. Only <b>Day</b> and <b>Subject</b> are needed —
+          write <code>Lunch</code> or <code>Break</code> as the subject for a break.
+        </div>
+        <div id="ttImportMsg" class="meta" style="margin-top:8px;"></div>
+        <div id="ttImportPreview"></div>
+      </div>
+
+      <div id="taskImport" hidden>
+        <div class="csv-help">
+          <b>One task per row:</b> <code>Task, When, Emoji, Id</code>.
+          <b>When</b> is one of <code>morning</code>, <code>chores</code>, <code>evening</code>,
+          <code>laundry</code> or <code>weekly</code>. <b>Id</b> is only there so an exported file can
+          come back without losing the history behind each task — leave it blank for anything new.
+          <div class="csv-btns">
+            <button class="action ghost" onclick="tasksDownloadTemplate()">⬇ CSV template</button>
+            <button class="action ghost" onclick="tasksDownloadCurrent()">⬇ Export these tasks</button>
+          </div>
+        </div>
+        <textarea id="taskImportText" rows="6" placeholder="Task,When,Emoji,Id&#10;Wash face,morning,🧼,&#10;Homework done,evening,📚," style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; font-family:var(--mono, monospace); font-size:13px;"></textarea>
+        <div style="display:flex; gap:10px; margin-top:8px; flex-wrap:wrap; align-items:center;">
+          <input id="taskImportFile" type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" onchange="tasksImportFromFile(this)" style="font-size:13px;" />
+          <button class="action ghost" onclick="tasksPreviewImport()">Check it</button>
+          <button class="action primary" id="taskImportApply" onclick="tasksApplyImport()" disabled>Use these tasks</button>
+        </div>
+        <div id="taskImportMsg" class="meta" style="margin-top:8px;"></div>
+        <div id="taskImportPreview"></div>
+      </div>
+
+      <h3 id="pfSection" style="font-size:16px; font-weight:800; margin:22px 0 6px;">👦 Child &amp; Country</h3>
+      <div class="meta" style="margin-bottom:10px;">The name shown in the app, and the country whose public holidays the calendar should follow.</div>
+      <div id="pfGrid" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:10px;">
+        <div><label style="font-weight:700; font-size:13px;">Child's name</label><input id="pfChildName" type="text" onchange="saveProfileFields()" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="e.g. Jayden" /></div>
+        <div><label style="font-weight:700; font-size:13px;">Age</label><select id="pfChildAge" data-age-select onchange="saveProfileFields()" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;"></select>
+          <div id="pfAgeFromDob" class="meta" style="margin-top:4px;" hidden></div></div>
+        <div><label style="font-weight:700; font-size:13px;">Date of birth <span class="meta">(optional)</span></label><input id="pfChildDob" type="date" onchange="saveProfileFields()" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" />
+          <div class="meta" style="margin-top:4px;">Set this and the age keeps itself up to date.</div></div>
+        <div><label style="font-weight:700; font-size:13px;">Country</label><select id="pfCountry" data-country-select onchange="saveProfileFields()" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;"></select></div>
+      </div>
+      <div id="pfNote" class="meta" style="margin-top:8px;"></div>
+      <button class="action ghost" style="margin-top:10px;" onclick="openFamilyPlan()">👨‍👩‍👧‍👦 ＋ Add another child</button>
+
+      </details>
+
+      <details class="pd-group" id="pgExtras">
+        <summary>⚙️ Extras &amp; settings<span class="pd-hint">points store, weekly quotes, PIN, password and backup</span></summary>
+      <h3 id="storeSection" style="font-size:16px; font-weight:800; margin:22px 0 6px;">🛍️ Points Store</h3>
+      <div class="meta" style="margin-bottom:10px;">Your child can spend earned points on themes, avatars and small extras. Buying is instant and costs no real money. Real-world rewards still need your approval.</div>
+      <label style="display:flex; align-items:center; gap:8px; font-weight:700; font-size:13px; margin-bottom:10px;">
+        <input id="storeEnabled" type="checkbox" onchange="setStoreEnabled(this.checked)" /> Allow the store
+      </label>
+      <div style="display:grid; grid-template-columns:2fr 1fr; gap:10px; align-items:end;">
+        <div>
+          <label style="font-weight:700; font-size:13px;">Give an item free</label>
+          <select id="storeGiftPick" class="month" style="width:100%; margin-top:4px;"></select>
+        </div>
+        <button class="action ghost" onclick="giftStoreItem()">🎁 Give it</button>
+      </div>
+      <div id="storeParentLog" style="margin-top:10px;"></div>
+
+      <h3 id="qwSection" style="font-size:16px; font-weight:800; margin:22px 0 6px;">💬 Weekly Motivation Quotes</h3>
+      <div class="meta" style="margin-bottom:10px;">One quote is shown at the top of the tracker each week. It changes every Monday, then starts again at the top of the list.</div>
+      <label style="display:flex; align-items:center; gap:8px; font-weight:700; font-size:13px; margin-bottom:10px;">
+        <input id="qwShow" type="checkbox" onchange="qToggleShow(this.checked)" /> Show the quote card
+      </label>
+      <div id="qwList"></div>
+      <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
+        <button class="action ghost" onclick="qAdd()">＋ Add Quote</button>
+        <button class="action ghost" onclick="qRestoreDefaults()">↻ Restore Default Quotes</button>
+      </div>
+      <div id="qwNow" class="qw-now"></div>
+
+      <h3 id="secSection" style="font-size:16px; font-weight:800; margin:22px 0 6px;">🔐 Account &amp; Security</h3>
+      <div id="secPinNotice" class="notice warn" style="display:none; margin-bottom:10px;"></div>
+      <div id="secMessage" class="notice" style="display:none; margin-bottom:10px;"></div>
+      <div class="sec-grid">
+        <div class="sec-card">
+          <b>Change parent PIN</b>
+          <div class="meta">Opens this dashboard. Keep it from your child.</div>
+          <input id="secNewPin" type="password" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="New PIN (4–8 digits)" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" />
+          <input id="secNewPin2" type="password" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="Type the new PIN again" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" />
+          <button class="action ghost" onclick="changeParentPin()">Save new PIN</button>
+        </div>
+        <div class="sec-card">
+          <b>Change account password</b>
+          <div class="meta" id="secPasswordMeta"></div>
+          <div id="secPasswordFields">
+            <input id="secNewPassword" type="password" autocomplete="new-password" placeholder="New password" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" />
+            <input id="secNewPassword2" type="password" autocomplete="new-password" placeholder="Confirm password" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" />
+            <button class="action ghost" onclick="changeAccountPassword()">Save new password</button>
+          </div>
+        </div>
+        <div class="sec-card">
+          <b>Backup</b>
+          <div class="meta" id="secBackupMeta"></div>
+          <button class="action ghost" onclick="downloadAllData()">⬇️ Download a copy</button>
+        </div>
+      </div>
+      </details>
+
+    </div>
+    </div>
+  </section>
+
 
 <!-- Modal for Daily Editor -->
 
@@ -4668,266 +4949,6 @@ body.theme-sportscar .hero::after {
     <div style="display:flex; gap:10px; margin-top:16px;">
       <button class="action ghost" onclick="clearAvatar()">Use initials instead</button>
       <button class="action primary" style="margin-left:auto;" onclick="closeModal('avatarModal')">Done</button>
-    </div>
-  </div>
-</div>
-
-<div id="parentModal" class="modal">
-  <div class="modal-card">
-    <div class="modalTop">
-      <div>
-        <h2 style="margin:0">🔐 Parent Dashboard</h2>
-        <div class="meta" id="parentWho">Progress, rewards, routine tasks & approvals.</div>
-      </div>
-      <button class="close" onclick="closeModal('parentModal')">Close ✕</button>
-    </div>
-
-    <div id="parentMessage" class="notice" style="display:none; margin-top:14px;"></div>
-
-    <!-- first run: create the PIN -->
-    <div id="parentSetup" style="display:none; margin-top:14px;">
-      <div class="meta" style="margin-bottom:10px;">Set a PIN so only you can open this dashboard.</div>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
-        <div><label style="font-weight:700; font-size:13px;">Child's Name</label><input id="newChildName" type="text"  style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="e.g. Jayden" /></div>
-        <div><label style="font-weight:700; font-size:13px;">Parent's Name</label><input id="newParentName" type="text"  style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="e.g. Katrina" /></div>
-      </div>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px">
-        <div><label style="font-weight:700; font-size:13px;">Country</label><select id="newCountry" data-country-select style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;"></select></div>
-        <div><label style="font-weight:700; font-size:13px;">Child's Age</label><select id="newChildAge" data-age-select style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;"></select></div>
-      </div>
-      <div style="margin-top:12px"><label style="font-weight:700; font-size:13px;">Create PIN (4-8 digits)</label><input id="newParentPin" type="password" inputmode="numeric" maxlength="8" onkeydown="if(event.key===&#39;Enter&#39;) createParentPin()" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="••••" /></div>
-      <button class="action primary" style="width:100%; margin-top:14px;" onclick="createParentPin()">🔐 Set PIN & Open Dashboard</button>
-    </div>
-
-    <!-- returning: unlock -->
-    <div id="parentGate" style="display:none; margin-top:14px;">
-      <label style="font-weight:700; font-size:13px;">Enter Parent PIN</label>
-      <input id="parentPinInput" type="password" inputmode="numeric" maxlength="8" onkeydown="if(event.key===&#39;Enter&#39;) unlockParentDashboard()" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="••••" />
-      <button class="action primary" style="width:100%; margin-top:14px;" onclick="unlockParentDashboard()">Unlock</button>
-      <div class="auth-links" style="margin-top:10px;"><button type="button" class="link-btn" onclick="startPinReset()">Forgot PIN?</button></div>
-
-      <div id="pinResetBox" hidden>
-        <div id="pinResetCloud" hidden>
-          <b>Reset the parent PIN</b>
-          <div class="meta">Confirm it's you with the password for <b id="pinResetEmail"></b>, then choose a new PIN.</div>
-          <input id="pinResetPassword" type="password" autocomplete="current-password" placeholder="Account password" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" />
-          <div class="auth-grid">
-            <input id="pinResetNew" type="password" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="New PIN (4–8 digits)" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" />
-            <input id="pinResetNew2" type="password" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="Type the new PIN again" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" />
-          </div>
-          <button class="action primary" onclick="resetPinWithPassword()">Reset PIN</button>
-          <button type="button" class="link-btn" onclick="showForgotPasswordFromPin()">Forgot the password too?</button>
-        </div>
-        <div id="pinResetLocal" hidden>
-          <b>Reset the parent PIN</b>
-          <div class="meta">This profile isn't linked to an email account, so there's no password to confirm who you are. Anyone using this device could reset it, so the dashboard will show when it was last reset.</div>
-          <div class="auth-grid">
-            <input id="pinResetLocalNew" type="password" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="New PIN (4–8 digits)" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" />
-            <input id="pinResetLocalNew2" type="password" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="Type the new PIN again" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" />
-          </div>
-          <button class="action primary" onclick="resetPinLocal()">Reset PIN</button>
-        </div>
-        <button type="button" class="link-btn" onclick="cancelPinReset()">Cancel</button>
-      </div>
-    </div>
-
-    <!-- unlocked -->
-    <div id="parentBody" style="display:none;">
-      <div class="pd-jump" id="pdJump">
-        <button type="button" onclick="openParentGroup('pgNow')">✅ Needs you<span class="pd-badge" id="pgApprovalBadge" hidden>0</span></button>
-        <button type="button" onclick="openParentGroup('pgRoutine')">📋 Routine &amp; rewards</button>
-        <button type="button" onclick="openParentGroup('pgSchool')">🏫 School &amp; child</button>
-        <button type="button" onclick="openParentGroup('pgExtras')">⚙️ Extras &amp; settings</button>
-      </div>
-
-      <details class="pd-group" id="pgNow" open>
-        <summary>✅ Needs you now<span class="pd-hint">rewards waiting, and how the month is going</span></summary>
-      <div id="ageNotice" class="pd-notice" hidden></div>
-      <h3 style="font-size:16px; font-weight:800; margin:22px 0 10px;">✅ Reward Approvals</h3>
-      <div id="parentApprovals"></div>
-
-      <h3 style="font-size:16px; font-weight:800; margin:18px 0 10px;">📊 This Month at a Glance</h3>
-      <div id="parentProgress"></div>
-
-      </details>
-
-      <details class="pd-group" id="pgRoutine" open>
-        <summary>📋 Routine &amp; rewards<span class="pd-hint">what your child does, earns and works towards</span></summary>
-      <h3 style="font-size:16px; font-weight:800; margin:22px 0 10px;">📋 Daily Routine Tasks</h3>
-      <div id="parentTasks"></div>
-      <div style="display:grid; grid-template-columns:2fr 1fr; gap:10px; margin-top:10px;">
-        <div><input id="newTaskName" type="text"  style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="Task name, e.g. 🎹 Piano practice" /></div>
-        <div>
-          <select id="newTaskCat" class="month" style="width:100%;">
-            <option value="morning">Morning routine</option>
-            <option value="chores">After school &amp; chores</option>
-            <option value="tidy">Room tidy</option>
-            <option value="laundry">Laundry (weekend)</option>
-            <option value="evening">Evening</option>
-            <option value="weekly">Weekly targets</option>
-          </select>
-        </div>
-      </div>
-      <div style="display:flex; gap:10px; margin-top:10px;">
-        <button class="action ghost" onclick="addTask()">＋ Add Task</button>
-        <button class="action ghost" onclick="resetTasksToDefault()">↺ Restore Default Routine</button>
-        <button class="action ghost" onclick="toggleTaskImport()">📥 Import tasks</button>
-        <button class="action ghost" onclick="exportHomeworkCsv()">📚 Homework CSV</button>
-      </div>
-
-      <h3 style="font-size:16px; font-weight:800; margin:22px 0 10px;">🎁 Rewards</h3>
-      <div class="meta" style="margin-bottom:10px;">Game cards come in four sizes, from 1,000 points for a $10 card up to 7,500 for a $100 one, so there's something a few good weeks away and something worth months of effort. Buy whichever card your child's game store sells and enter the code together. Edit any reward to change its wording or price.</div>
-      <div id="parentRewards"></div>
-      <div style="display:grid; grid-template-columns:2fr 1fr; gap:10px; margin-top:10px;">
-        <div><input id="newRewardName" type="text"  style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="Reward name" /></div>
-        <div><input id="newRewardCost" type="number"  style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="Cost in PTS" /></div>
-      </div>
-      <div style="margin-top:10px;"><input id="newRewardDesc" type="text"  style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="Short description (optional)" /></div>
-      <label style="display:block; font-weight:700; font-size:13px; margin-top:10px;">Pick an icon</label>
-      <div id="newRewardIcons"></div>
-      <button class="action ghost" style="margin-top:10px;" onclick="addReward()">＋ Add Reward</button>
-
-      <h3 id="dlSection" style="font-size:16px; font-weight:800; margin:22px 0 6px;">⏰ Deadlines</h3>
-      <div class="meta" style="margin-bottom:10px;">Give tasks a time to be done by. A task ticked late still shows as done, but earns no points and doesn't count towards the perfect-day bonus or streaks. Nothing is ever taken away. Leave a time empty for no deadline.</div>
-      <label style="display:flex; align-items:center; gap:8px; font-weight:700; font-size:13px; margin-bottom:10px;">
-        <input id="dlEnabled" type="checkbox" onchange="setDeadlinesEnabled(this.checked)" /> Use deadlines
-      </label>
-      <div id="dlGrid"></div>
-      <div id="dlToday" style="margin-top:10px;"></div>
-
-      </details>
-
-      <details class="pd-group" id="pgSchool">
-        <summary>🏫 School &amp; child<span class="pd-hint">timetable, name, age and country</span></summary>
-      <h3 id="ttSection" style="font-size:16px; font-weight:800; margin:22px 0 6px;">🏫 School &amp; Timetable</h3>
-      <div class="meta" style="margin-bottom:10px;">Your child's school and weekly timetable. Leave it empty if they don't have a fixed timetable.</div>
-      <div id="ttDetails" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
-        <div><label style="font-weight:700; font-size:13px;">School</label><input id="ttSchool" type="text" onchange="saveTimetableDetails()" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="e.g. Riverside Secondary" /></div>
-        <div><label style="font-weight:700; font-size:13px;">Class</label><input id="ttClass" type="text" onchange="saveTimetableDetails()" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="e.g. Form 2B" /></div>
-        <div><label style="font-weight:700; font-size:13px;">Form teacher</label><input id="ttTeacher" type="text" onchange="saveTimetableDetails()" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="e.g. Ms. Clarke" /></div>
-      </div>
-      <div id="ttDayTabs" style="display:flex; gap:6px; margin-top:14px; flex-wrap:wrap;"></div>
-      <div id="ttDayEditor" style="margin-top:12px;"></div>
-      <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
-        <button class="action ghost" onclick="ttAddSlot('class')">＋ Add Period</button>
-        <button class="action ghost" onclick="ttAddSlot('break')">＋ Add Break</button>
-        <button class="action ghost" onclick="ttClearAll()">🗑 Remove Timetable</button>
-        <button class="action ghost" onclick="toggleTtImport()">📥 Import a timetable</button>
-      </div>
-
-      <div id="ttImport" hidden>
-        <div class="meta" style="margin:10px 0 8px;">Copy the timetable out of a spreadsheet and paste it here, or choose a .csv file. Either layout works: one row per day, or a grid with the days across the top. Write a room or teacher in brackets, like <code>Maths (Ms. K; Rm 4)</code> — a semicolon, since a comma would start a new column.</div>
-        <textarea id="ttImportText" rows="6" placeholder="Monday, Maths (Ms. K, Rm 4), English, Lunch, Science&#10;Tuesday, Spanish, History, Lunch, PE" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; font-family:var(--mono, monospace); font-size:13px;"></textarea>
-        <div style="display:flex; gap:10px; margin-top:8px; flex-wrap:wrap; align-items:center;">
-          <input id="ttImportFile" type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" onchange="ttImportFromFile(this)" style="font-size:13px;" />
-          <button class="action ghost" onclick="ttPreviewImport()">Check it</button>
-          <button class="action primary" id="ttImportApply" onclick="ttApplyImport()" disabled>Use this timetable</button>
-        </div>
-        <div class="csv-help">
-          <b>Or work in a spreadsheet.</b> The template has one lesson per row:
-          <code>Day, Subject, Teacher, Room, Time</code>. Only <b>Day</b> and <b>Subject</b> are needed —
-          write <code>Lunch</code> or <code>Break</code> as the subject for a break.
-          <div class="csv-btns">
-            <button class="action ghost" onclick="ttDownloadTemplate()">⬇ CSV template</button>
-            <button class="action ghost" onclick="ttDownloadCurrent()">⬇ Export this timetable</button>
-          </div>
-        </div>
-        <div id="ttImportMsg" class="meta" style="margin-top:8px;"></div>
-        <div id="ttImportPreview"></div>
-      </div>
-
-      <div id="taskImport" hidden>
-        <div class="csv-help">
-          <b>One task per row:</b> <code>Task, When, Emoji, Id</code>.
-          <b>When</b> is one of <code>morning</code>, <code>chores</code>, <code>evening</code>,
-          <code>laundry</code> or <code>weekly</code>. <b>Id</b> is only there so an exported file can
-          come back without losing the history behind each task — leave it blank for anything new.
-          <div class="csv-btns">
-            <button class="action ghost" onclick="tasksDownloadTemplate()">⬇ CSV template</button>
-            <button class="action ghost" onclick="tasksDownloadCurrent()">⬇ Export these tasks</button>
-          </div>
-        </div>
-        <textarea id="taskImportText" rows="6" placeholder="Task,When,Emoji,Id&#10;Wash face,morning,🧼,&#10;Homework done,evening,📚," style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; font-family:var(--mono, monospace); font-size:13px;"></textarea>
-        <div style="display:flex; gap:10px; margin-top:8px; flex-wrap:wrap; align-items:center;">
-          <input id="taskImportFile" type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" onchange="tasksImportFromFile(this)" style="font-size:13px;" />
-          <button class="action ghost" onclick="tasksPreviewImport()">Check it</button>
-          <button class="action primary" id="taskImportApply" onclick="tasksApplyImport()" disabled>Use these tasks</button>
-        </div>
-        <div id="taskImportMsg" class="meta" style="margin-top:8px;"></div>
-        <div id="taskImportPreview"></div>
-      </div>
-
-      <h3 id="pfSection" style="font-size:16px; font-weight:800; margin:22px 0 6px;">👦 Child &amp; Country</h3>
-      <div class="meta" style="margin-bottom:10px;">The name shown in the app, and the country whose public holidays the calendar should follow.</div>
-      <div id="pfGrid" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:10px;">
-        <div><label style="font-weight:700; font-size:13px;">Child's name</label><input id="pfChildName" type="text" onchange="saveProfileFields()" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="e.g. Jayden" /></div>
-        <div><label style="font-weight:700; font-size:13px;">Age</label><select id="pfChildAge" data-age-select onchange="saveProfileFields()" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;"></select>
-          <div id="pfAgeFromDob" class="meta" style="margin-top:4px;" hidden></div></div>
-        <div><label style="font-weight:700; font-size:13px;">Date of birth <span class="meta">(optional)</span></label><input id="pfChildDob" type="date" onchange="saveProfileFields()" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" />
-          <div class="meta" style="margin-top:4px;">Set this and the age keeps itself up to date.</div></div>
-        <div><label style="font-weight:700; font-size:13px;">Country</label><select id="pfCountry" data-country-select onchange="saveProfileFields()" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;"></select></div>
-      </div>
-      <div id="pfNote" class="meta" style="margin-top:8px;"></div>
-      <button class="action ghost" style="margin-top:10px;" onclick="openFamilyPlan()">👨‍👩‍👧‍👦 ＋ Add another child</button>
-
-      </details>
-
-      <details class="pd-group" id="pgExtras">
-        <summary>⚙️ Extras &amp; settings<span class="pd-hint">points store, weekly quotes, PIN, password and backup</span></summary>
-      <h3 id="storeSection" style="font-size:16px; font-weight:800; margin:22px 0 6px;">🛍️ Points Store</h3>
-      <div class="meta" style="margin-bottom:10px;">Your child can spend earned points on themes, avatars and small extras. Buying is instant and costs no real money. Real-world rewards still need your approval.</div>
-      <label style="display:flex; align-items:center; gap:8px; font-weight:700; font-size:13px; margin-bottom:10px;">
-        <input id="storeEnabled" type="checkbox" onchange="setStoreEnabled(this.checked)" /> Allow the store
-      </label>
-      <div style="display:grid; grid-template-columns:2fr 1fr; gap:10px; align-items:end;">
-        <div>
-          <label style="font-weight:700; font-size:13px;">Give an item free</label>
-          <select id="storeGiftPick" class="month" style="width:100%; margin-top:4px;"></select>
-        </div>
-        <button class="action ghost" onclick="giftStoreItem()">🎁 Give it</button>
-      </div>
-      <div id="storeParentLog" style="margin-top:10px;"></div>
-
-      <h3 id="qwSection" style="font-size:16px; font-weight:800; margin:22px 0 6px;">💬 Weekly Motivation Quotes</h3>
-      <div class="meta" style="margin-bottom:10px;">One quote is shown at the top of the tracker each week. It changes every Monday, then starts again at the top of the list.</div>
-      <label style="display:flex; align-items:center; gap:8px; font-weight:700; font-size:13px; margin-bottom:10px;">
-        <input id="qwShow" type="checkbox" onchange="qToggleShow(this.checked)" /> Show the quote card
-      </label>
-      <div id="qwList"></div>
-      <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
-        <button class="action ghost" onclick="qAdd()">＋ Add Quote</button>
-        <button class="action ghost" onclick="qRestoreDefaults()">↻ Restore Default Quotes</button>
-      </div>
-      <div id="qwNow" class="qw-now"></div>
-
-      <h3 id="secSection" style="font-size:16px; font-weight:800; margin:22px 0 6px;">🔐 Account &amp; Security</h3>
-      <div id="secPinNotice" class="notice warn" style="display:none; margin-bottom:10px;"></div>
-      <div id="secMessage" class="notice" style="display:none; margin-bottom:10px;"></div>
-      <div class="sec-grid">
-        <div class="sec-card">
-          <b>Change parent PIN</b>
-          <div class="meta">Opens this dashboard. Keep it from your child.</div>
-          <input id="secNewPin" type="password" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="New PIN (4–8 digits)" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" />
-          <input id="secNewPin2" type="password" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="Type the new PIN again" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" />
-          <button class="action ghost" onclick="changeParentPin()">Save new PIN</button>
-        </div>
-        <div class="sec-card">
-          <b>Change account password</b>
-          <div class="meta" id="secPasswordMeta"></div>
-          <div id="secPasswordFields">
-            <input id="secNewPassword" type="password" autocomplete="new-password" placeholder="New password" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" />
-            <input id="secNewPassword2" type="password" autocomplete="new-password" placeholder="Confirm password" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" />
-            <button class="action ghost" onclick="changeAccountPassword()">Save new password</button>
-          </div>
-        </div>
-        <div class="sec-card">
-          <b>Backup</b>
-          <div class="meta" id="secBackupMeta"></div>
-          <button class="action ghost" onclick="downloadAllData()">⬇️ Download a copy</button>
-        </div>
-      </div>
-      </details>
-
     </div>
   </div>
 </div>
@@ -5468,7 +5489,8 @@ function csvHeaderMap(cells, wanted) {
   const found = {};
   cells.forEach((c, i) => {
     const key = String(c || '').toLowerCase().replace(/[^a-z]/g, '');
-    if (wanted[key] !== undefined) found[wanted[key]] = i;
+    const field = wanted[key];
+    if (field !== undefined && found[field] === undefined) found[field] = i;
   });
   return found;
 }
@@ -5513,9 +5535,13 @@ function ttCellToSlot(cell) {
   return { type: 'class', subject: subject.slice(0, 40), teacher: teacher.slice(0, 30), room: room.slice(0, 20) };
 }
 
-const TT_COLUMNS = { day: 'day', subject: 'subject', lesson: 'subject', class: 'subject',
+/* Column names understood in an imported timetable. "Class" is deliberately
+   absent as an alias for the lesson: in a school export it holds the form
+   ("1GAMMA"), and letting it stand in for Subject wipes out the real one. */
+const TT_COLUMNS = { day: 'day', subject: 'subject', lesson: 'subject', period: 'period',
                      teacher: 'teacher', staff: 'teacher', room: 'room', location: 'room',
-                     time: 'time', period: 'time' };
+                     time: 'time', daynote: 'note', note: 'note', reminder: 'note',
+                     school: 'school', class: 'className', form: 'formTeacher', formteacher: 'formTeacher' };
 
 function parseTimetableText(text) {
   const rows = ttSplitRows(text);
@@ -5526,13 +5552,20 @@ function parseTimetableText(text) {
   // the template's layout: a header row, then one lesson per row
   const head = csvHeaderMap(rows[0], TT_COLUMNS);
   if (head.day !== undefined && head.subject !== undefined) {
+    const meta = { school: '', className: '', formTeacher: '' };
+    const cell = (cells, field) => head[field] === undefined ? '' : String(cells[head[field]] || '').trim();
     rows.slice(1).forEach(cells => {
-      const day = ttDayFromText(cells[head.day]);
-      const subject = (cells[head.subject] || '').trim();
-      if (!day) { if (cells.join('').trim()) warn.push(`Skipped a row with no weekday: "${(cells[head.day] || cells[0] || '').slice(0, 24)}"`); return; }
+      const day = ttDayFromText(cell(cells, 'day'));
+      const subject = cell(cells, 'subject');
+      if (!day) { if (cells.join('').trim()) warn.push(`Skipped a row with no weekday: "${(cell(cells, 'day') || cells[0] || '').slice(0, 24)}"`); return; }
+      // the school, form and form teacher are written once, on the first row
+      ['school', 'className', 'formTeacher'].forEach(f => { if (!meta[f]) meta[f] = cell(cells, f).slice(0, 60); });
+      const note = cell(cells, 'note');
+      if (note && !days[day].reminder) days[day].reminder = note.slice(0, 80);
       if (!subject) return;
-      const time = head.time !== undefined ? (cells[head.time] || '').trim() : '';
-      const low = subject.toLowerCase();
+      const period = cell(cells, 'period');
+      const time = cell(cells, 'time');
+      const low = (subject + ' ' + period).toLowerCase();
       if (TT_BREAK_WORDS.some(w => low.includes(w))) {
         days[day].slots.push({ type: 'break', label: subject.slice(0, 30), time: time.slice(0, 20) });
         return;
@@ -5540,13 +5573,13 @@ function parseTimetableText(text) {
       days[day].slots.push({
         type: 'class',
         subject: subject.slice(0, 40),
-        teacher: (head.teacher !== undefined ? (cells[head.teacher] || '') : '').trim().slice(0, 30),
-        room: (head.room !== undefined ? (cells[head.room] || '') : '').trim().slice(0, 20)
+        teacher: cell(cells, 'teacher').slice(0, 30),
+        room: cell(cells, 'room').slice(0, 20)
       });
     });
     const n = Object.values(days).reduce((t, d) => t + d.slots.length, 0);
     if (!n) warn.push('The columns were understood, but no lessons were found under them.');
-    return { days, warn, count: n };
+    return { days, warn, count: n, meta };
   }
 
   const headerDays = rows[0].map(ttDayFromText);
@@ -5634,7 +5667,12 @@ function ttPreviewImport() {
 function ttApplyImport() {
   if (!ttImportParsed) return;
   if (hasTimetable() && !confirm('Replace the timetable that is there now?')) return;
-  schoolTimetable = normalizeTimetable(Object.assign({}, schoolTimetable, { days: ttImportParsed.days }));
+  const carried = Object.assign({}, schoolTimetable, { days: ttImportParsed.days });
+  const meta = ttImportParsed.meta || {};
+  if (meta.school) carried.school = meta.school;
+  if (meta.className) carried.className = meta.className;
+  if (meta.formTeacher) carried.teacher = meta.formTeacher;
+  schoolTimetable = normalizeTimetable(carried);
   ttSave();
   renderParentTimetable();
   document.getElementById('ttImport').hidden = true;
@@ -5899,7 +5937,6 @@ function openFamilyPlan() {
 }
 async function familyPlanUseLocal() {
   closeModal('familyModal');
-  closeModal('parentModal');
   closeSettings();
   await loginAsGuest({ forceNew: true });
 }
@@ -6535,6 +6572,10 @@ async function loadCloud() {
 // --- PHOTO THEME CUSTOMIZATION SYSTEM ---
 
 function switchMainTab(panelId, btnElem) {
+  // walking away from the parent page locks it behind the PIN again
+  const leaving = document.getElementById('parentPanel');
+  if (leaving && leaving.classList.contains('active') && panelId !== 'parentPanel'
+      && typeof lockParentDashboard === 'function') lockParentDashboard();
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   const target = document.getElementById(panelId);
   if (target) target.classList.add('active');
@@ -8077,6 +8118,10 @@ if (savedGuest) {
 // --- PHOTO THEME CUSTOMIZATION SYSTEM ---
 
 function switchMainTab(panelId, btnElem) {
+  // walking away from the parent page locks it behind the PIN again
+  const leaving = document.getElementById('parentPanel');
+  if (leaving && leaving.classList.contains('active') && panelId !== 'parentPanel'
+      && typeof lockParentDashboard === 'function') lockParentDashboard();
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   const target = document.getElementById(panelId);
   if (target) target.classList.add('active');
@@ -9604,7 +9649,9 @@ let parentUnlocked = false;
 function openParentDashboard() {
   const cfg = parentConfig();
   parentUnlocked = false;
-  openModal('parentModal');
+  switchMainTab('parentPanel');
+  const panel = document.getElementById('parentPanel');
+  if (panel) panel.scrollIntoView({ block: 'start' });
   const hasPin = !!(cfg && cfg.pinHash);
   document.getElementById('parentSetup').style.display = hasPin ? 'none' : 'block';
   document.getElementById('parentGate').style.display  = hasPin ? 'block' : 'none';
@@ -9626,12 +9673,26 @@ function startPinReset() {
   const first = document.getElementById(cloud ? 'pinResetPassword' : 'pinResetLocalNew');
   if (first) first.focus();
 }
+function lockParentDashboard() {
+  parentUnlocked = false;
+  const cfg = parentConfig();
+  const hasPin = !!(cfg && cfg.pinHash);
+  const body = document.getElementById('parentBody');
+  const gate = document.getElementById('parentGate');
+  const lock = document.getElementById('parentLockBtn');
+  if (body) body.style.display = 'none';
+  if (gate) gate.style.display = hasPin ? 'block' : 'none';
+  if (lock) lock.hidden = true;
+  const pin = document.getElementById('parentPinInput');
+  if (pin) pin.value = '';
+  parentMsg('');
+}
+
 function cancelPinReset() {
   document.getElementById('pinResetBox').hidden = true;
   parentMsg('');
 }
 function showForgotPasswordFromPin() {
-  closeModal('parentModal');
   authView = 'forgot';
   openSettings();
 }
@@ -9794,6 +9855,8 @@ function renderParentDashboard() {
   const body = document.getElementById('parentBody');
   if (!body || !parentUnlocked) return;
   body.style.display = 'block';
+  const lock = document.getElementById('parentLockBtn');
+  if (lock) lock.hidden = false;      // a page needs a way to lock it again
   renderParentProgress();
   renderParentApprovals();
   renderParentRewards();
