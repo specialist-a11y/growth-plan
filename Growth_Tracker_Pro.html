@@ -3811,6 +3811,56 @@ body.demo-on #appSidebar{ top:var(--demo-bar-h,46px) !important; height:calc(100
 .tt-preview b{ display:block; margin-bottom:5px; font-size:12px; color:var(--accent); }
 .tt-preview .meta{ font-size:11.5px; }
 @media (max-width:760px){ .tt-preview{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
+/* ===== MILESTONE MARKS =====
+   Earned by doing the work, so they are deliberately different from anything
+   the store sells: movement and light rather than a static ring. */
+.ms-stage{ position:relative; display:inline-block; width:100%; }
+#avatarBuddyImg.ms-spark, #heroAvatar.ms-spark{ filter:drop-shadow(0 0 6px rgba(255,214,102,.85)); }
+.ms-spark-host::before{ content:'✨'; position:absolute; left:50%; top:4%; font-size:20px;
+  animation:msOrbit 3.6s linear infinite; pointer-events:none; }
+@keyframes msOrbit{
+  0%{ transform:translate(-50%,0) rotate(0deg) translateX(58px) rotate(0deg); opacity:.95; }
+  50%{ opacity:.55; }
+  100%{ transform:translate(-50%,0) rotate(360deg) translateX(58px) rotate(-360deg); opacity:.95; }
+}
+.ms-halo-host::after{ content:''; position:absolute; left:50%; top:2%; width:86px; height:26px; margin-left:-43px;
+  border-radius:50%; border:3px solid rgba(255,221,87,.9); box-shadow:0 0 14px rgba(255,221,87,.6);
+  transform:perspective(60px) rotateX(58deg); animation:msHalo 3s ease-in-out infinite; pointer-events:none; }
+@keyframes msHalo{ 0%,100%{ transform:perspective(60px) rotateX(58deg) translateY(0); opacity:.95; }
+                   50%{ transform:perspective(60px) rotateX(58deg) translateY(-5px); opacity:.7; } }
+#avatarBuddyImg.ms-aura, #heroAvatar.ms-aura{
+  filter:drop-shadow(0 0 10px rgba(var(--accent-rgb,255,45,45),.75)) drop-shadow(0 0 22px rgba(var(--accent-2-rgb,120,90,255),.45));
+  animation:msAura 4.2s ease-in-out infinite, avatarIdle 4.5s ease-in-out infinite; }
+@keyframes msAura{ 0%,100%{ opacity:1; } 50%{ opacity:.88; } }
+.ms-legend-host::before{ content:''; position:absolute; left:50%; bottom:-2px; width:74%; height:12px; margin-left:-37%;
+  border-radius:50%; background:radial-gradient(closest-side, rgba(255,199,60,.85), rgba(255,199,60,0));
+  pointer-events:none; }
+#avatarBuddyImg.ms-legend, #heroAvatar.ms-legend{ filter:drop-shadow(0 6px 10px rgba(255,199,60,.55)); }
+/* both marks at once should not fight each other */
+#avatarBuddyImg.ms-aura.ms-legend, #heroAvatar.ms-aura.ms-legend{
+  filter:drop-shadow(0 0 10px rgba(var(--accent-rgb,255,45,45),.7)) drop-shadow(0 6px 10px rgba(255,199,60,.55)); }
+
+.ms-strip{ display:flex; flex-direction:column; gap:6px; margin-top:12px; text-align:left; }
+.ms-chip{ display:flex; align-items:center; gap:9px; padding:7px 9px; border-radius:12px;
+  border:1px solid var(--t-line,#26262e); background:var(--t-panel-2,#1b1b21); opacity:.62; }
+.ms-chip.got{ opacity:1; border-color:rgba(255,199,60,.55); background:rgba(255,199,60,.09); }
+.ms-chip .ms-ico{ font-size:17px; }
+.ms-chip b{ display:block; font-size:12.5px; color:var(--t-text,#f2f2f5); }
+.ms-chip small{ font-size:11px; color:var(--t-muted,#8d8d99); }
+
+.ms-pop{ position:fixed; left:50%; bottom:22px; transform:translateX(-50%); z-index:80; max-width:min(420px,92vw);
+  padding:13px 16px; border-radius:16px; border:1px solid rgba(255,199,60,.6);
+  background:linear-gradient(135deg,#1a1a22,#23201a); box-shadow:0 18px 40px rgba(0,0,0,.5); }
+.ms-pop-in{ display:flex; align-items:center; gap:12px; }
+.ms-pop-icon{ font-size:30px; animation:msPop .7s cubic-bezier(.34,1.56,.64,1); }
+.ms-pop b{ font-size:14.5px; color:#fff; }
+.ms-pop .meta{ font-size:12px; margin-top:2px; }
+@keyframes msPop{ 0%{ transform:scale(.3) rotate(-20deg); } 100%{ transform:scale(1) rotate(0); } }
+@media (prefers-reduced-motion:reduce){
+  .ms-spark-host::before, .ms-halo-host::after, .ms-pop-icon{ animation:none !important; }
+  #avatarBuddyImg.ms-aura, #heroAvatar.ms-aura{ animation:none !important; }
+}
+@media (max-width:760px){ .ms-pop{ bottom:calc(76px + env(safe-area-inset-bottom,0px)); } }
 /* long lists inside a tab stay browsable on a phone */
 @media (max-width:760px){
   .pd-page .qw-row{ gap:6px; }
@@ -4097,6 +4147,8 @@ body.theme-sportscar .hero::after {
     <p class="gate-foot">No account yet? Creating one takes a minute and starts a 15-day free trial.</p>
   </div>
 </div>
+
+<div id="milestonePop" class="ms-pop" hidden></div>
 
 <div id="demoBar" hidden>
   <span class="demo-what">👀 <b>Demo account</b><span class="demo-long"> — explore anything. Nothing here is saved to a real account.</span></span>
@@ -4817,10 +4869,12 @@ body.theme-sportscar .hero::after {
         <h3 style="margin:0 0 10px; font-size:16px; font-weight:700; display:flex; align-items:center; gap:8px; justify-content:center;">
           <span>🧍</span> Your Character
         </h3>
-        <img id="avatarBuddyImg" alt="" style="display:none; width:100%; max-width:190px; margin:0 auto;" />
+        <div class="ms-stage"><img id="avatarBuddyImg" alt="" style="display:none; width:100%; max-width:190px; margin:0 auto;" /></div>
         <div id="avatarBuddyName" style="font-weight:800; font-size:15px; color:#fff; margin-top:8px;">Pick your character</div>
         <div id="avatarBuddyTag" style="font-size:12px; color:var(--t-muted,#8d8d99); margin-top:2px;">Choose an avatar to represent you</div>
         <button class="action ghost" style="width:100%; margin-top:12px;" onclick="openAvatarPicker()">🧍 Choose Avatar</button>
+        <div class="ms-strip" id="milestoneStrip"></div>
+        <div class="meta" style="margin-top:8px; font-size:11.5px;">Marks are earned, never bought — and never taken away.</div>
       </div>
 
       <!-- Sneaker Motivation Card -->
@@ -7459,6 +7513,8 @@ function recordTick(day, key, val) {
   if (!d.late) d.late = {};
   if (late) d.late[key] = true; else delete d.late[key];
   if (!Object.keys(d.late).length) delete d.late;
+  // a tick can be the one that earns a milestone, so look straight away
+  if (val && typeof checkMilestones === 'function') setTimeout(() => checkMilestones(), 0);
 }
 function tickCounts(d, key) { return !!d.excused || !(d.late && d.late[key]); }
 
@@ -7943,6 +7999,11 @@ function renderAll() {
   renderLogs();
   renderIntentions();
   renderAnalytics();
+  if (typeof checkMilestones === 'function') {
+    checkMilestones();          // a tick may have just earned one
+    applyMilestoneLook();
+    renderMilestones();
+  }
 }
 
 async function changeMonth(m) {
@@ -10974,6 +11035,162 @@ function renderStore() {
   }).join('');
 }
 
+/* ===== MILESTONES =====
+   Things the child earns by doing the work, which change how their avatar
+   looks. They are never sold in the store and never taken away once earned —
+   that is the whole point of them. A streak can break; the mark it earned
+   stays. */
+const MILESTONE_KEY = 'teen-milestones';
+const MILESTONES = [
+  { id: 'spark',  name: 'Spark',     icon: '✨', cls: 'ms-spark',
+    need: 'A 7-day streak',            blurb: 'Seven days in a row with something ticked off.',
+    progress: st => [Math.min(st.bestStreak, 7), 7],
+    earned: st => st.bestStreak >= 7 },
+  { id: 'halo',   name: 'Halo',      icon: '😇', cls: 'ms-halo',
+    need: '30 perfect days',           blurb: 'Thirty days where the whole routine was done.',
+    progress: st => [Math.min(st.perfectDays, 30), 30],
+    earned: st => st.perfectDays >= 30 },
+  { id: 'aura',   name: 'Aura',      icon: '🌈', cls: 'ms-aura',
+    need: '1,000 points earned',       blurb: 'A thousand points earned in total — not spent, earned.',
+    progress: st => [Math.min(st.pointsEver, 1000), 1000],
+    earned: st => st.pointsEver >= 1000 },
+  { id: 'legend', name: 'Legend',    icon: '🏅', cls: 'ms-legend',
+    need: '40 school days of homework, none missed',
+    blurb: 'Forty school days in a row where homework was done, and done on time.',
+    progress: st => [Math.min(st.bestHomeworkRun, 40), 40],
+    earned: st => st.bestHomeworkRun >= 40 }
+];
+
+/* Completion for a day in any month, not just the one on screen. */
+function completionFor(year, month, day, rec) {
+  const d = rec || {};
+  const tasks = d.tasks || {}, tidy = d.tidy || {};
+  const date = new Date(year, month - 1, day);
+  const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+  const schoolDay = bbDayStatus(date).school;
+  let total = 0, done = 0;
+  dailyTasks.forEach(t => {
+    if (t.schoolOnly && !schoolDay) return;
+    if (t.weekendOnly && !isWeekend) return;
+    total++;
+    if (tasks[t.id]) done++;
+  });
+  if (isWeekend) total += 4;
+  ['floor', 'desk', 'bed', 'sweepMop'].forEach(k => { if (tidy[k]) done++; });
+  if (total === 0) return 0;                 // nothing asked of them is not a perfect day
+  return Math.min(100, Math.round((done / total) * 100));
+}
+
+/* Every day on this device, oldest first. */
+function allTrackedDays() {
+  const days = [];
+  gtScopedKeys().forEach(k => {
+    if (k.indexOf(MONTH_PREFIX) !== 0) return;
+    const month = k.slice(MONTH_PREFIX.length);
+    if (!/^\d{4}-\d{2}$/.test(month)) return;
+    let tracker = {};
+    try { tracker = (JSON.parse(localStorage.getItem(k)) || {}).tracker || {}; } catch (e) { return; }
+    const [y, m] = month.split('-').map(Number);
+    const last = new Date(y, m, 0).getDate();
+    for (let day = 1; day <= last; day++) {
+      const rec = tracker[day];
+      days.push({ key: `${month}-${String(day).padStart(2, '0')}`, y, m, day, rec: rec || null,
+                  date: new Date(y, m - 1, day) });
+    }
+  });
+  return days.sort((a, b) => a.key < b.key ? -1 : 1);
+}
+
+function milestoneStats() {
+  const days = allTrackedDays();
+  let bestStreak = 0, run = 0, perfectDays = 0, hwRun = 0, bestHomeworkRun = 0;
+  const today = new Date(); today.setHours(23, 59, 59, 999);
+  days.forEach(d => {
+    if (d.date > today) return;                       // the future is not a missed day
+    const pct = d.rec ? completionFor(d.y, d.m, d.day, d.rec) : 0;
+    if (pct > 0) { run++; bestStreak = Math.max(bestStreak, run); } else { run = 0; }
+    if (pct === 100) perfectDays++;
+    // homework, on school days only, and only when it was not ticked late
+    const schoolDay = bbDayStatus(d.date).school;
+    if (schoolDay && dailyTasks.some(t => t.id === 'homework')) {
+      const rec = d.rec || {};
+      const done = !!(rec.tasks && rec.tasks.homework);
+      const onTime = done && (!!rec.excused || !(rec.late && rec.late.homework));
+      if (onTime) { hwRun++; bestHomeworkRun = Math.max(bestHomeworkRun, hwRun); }
+      else if (d.rec) hwRun = 0;                      // a day that exists and was missed breaks it
+    }
+  });
+  return { bestStreak, currentStreak: run, perfectDays, pointsEver: earnedPoints(), bestHomeworkRun };
+}
+
+function earnedMilestones() { return loadStore(MILESTONE_KEY, {}) || {}; }
+function hasMilestone(id) { return !!earnedMilestones()[id]; }
+
+/* Earned once, kept for good: a broken streak never removes the mark. */
+function checkMilestones(announce) {
+  if (typeof dailyTasks === 'undefined') return [];
+  const have = earnedMilestones();
+  const st = milestoneStats();
+  const fresh = [];
+  MILESTONES.forEach(m => {
+    if (have[m.id] || !m.earned(st)) return;
+    have[m.id] = { at: new Date().toISOString() };
+    fresh.push(m);
+  });
+  if (fresh.length) {
+    saveStore(MILESTONE_KEY, have);
+    applyMilestoneLook();
+    renderMilestones();
+    if (announce !== false) fresh.forEach(m => announceMilestone(m));
+  }
+  return fresh;
+}
+
+function announceMilestone(m) {
+  const box = document.getElementById('milestonePop');
+  if (!box) return;
+  box.innerHTML = `<div class="ms-pop-in">
+      <span class="ms-pop-icon">${m.icon}</span>
+      <div><b>${escapeHTML(m.name)} unlocked!</b><div class="meta">${escapeHTML(m.blurb)}</div></div>
+    </div>`;
+  box.hidden = false;
+  clearTimeout(announceMilestone.t);
+  announceMilestone.t = setTimeout(() => { box.hidden = true; }, 6000);
+  const img = document.getElementById('avatarBuddyImg');
+  if (img) { img.classList.remove('cheer'); void img.offsetWidth; img.classList.add('cheer'); }
+}
+
+/* The marks are drawn on whatever avatar is on screen. */
+function applyMilestoneLook() {
+  const have = earnedMilestones();
+  ['avatarBuddyImg', 'heroAvatar'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const holder = el.parentElement;
+    MILESTONES.forEach(m => {
+      el.classList.toggle(m.cls, !!have[m.id]);
+      if (holder) holder.classList.toggle(m.cls + '-host', !!have[m.id]);
+    });
+  });
+}
+
+function renderMilestones() {
+  const box = document.getElementById('milestoneStrip');
+  if (!box) return;
+  const have = earnedMilestones();
+  const st = milestoneStats();
+  box.innerHTML = MILESTONES.map(m => {
+    const got = !!have[m.id];
+    const [at, of] = m.progress(st);
+    return `<div class="ms-chip${got ? ' got' : ''}" title="${escapeHTML(m.blurb)}">
+      <span class="ms-ico">${got ? m.icon : '🔒'}</span>
+      <div><b>${escapeHTML(m.name)}</b>
+        <small>${got ? 'Earned — yours for good' : `${escapeHTML(m.need)} · ${at} of ${of}`}</small>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 /* ===== ARRIVING FROM THE SALES SITE =====
    Its "Start your 15 days free" buttons link here with #trial, and #trial-pro
    or #trial-standard when a plan was picked. Open the create-account form and
@@ -11269,6 +11486,9 @@ renderAvatarUI();
 renderDemoBar();
 renderGate();
 checkChildAge();
+if (!earnedMilestones() || !Object.keys(earnedMilestones()).length) checkMilestones(false);
+applyMilestoneLook();
+renderMilestones();
 (function () {
   let asked = null;
   try { asked = sessionStorage.getItem('gt-open-auth'); sessionStorage.removeItem('gt-open-auth'); } catch (e) {}
