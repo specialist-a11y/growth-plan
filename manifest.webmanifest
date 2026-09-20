@@ -1,0 +1,17 @@
+{
+  "name": "1GAMMA MB Growth Tracker",
+  "short_name": "1GAMMA MB",
+  "description": "Daily routine, homework, timetable, points and rewards for teens, set up by a parent.",
+  "start_url": "./Growth_Tracker_Pro.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#111115",
+  "theme_color": "#111115",
+  "categories": ["education", "productivity", "lifestyle"],
+  "icons": [
+    { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "assets/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

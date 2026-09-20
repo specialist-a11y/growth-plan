@@ -4,6 +4,13 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>1GAMMA MB</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#111115">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="1GAMMA MB">
+<meta name="mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;700;800;900&family=Permanent+Marker&display=swap" rel="stylesheet">
@@ -3811,6 +3818,19 @@ body.demo-on #appSidebar{ top:var(--demo-bar-h,46px) !important; height:calc(100
 .tt-preview b{ display:block; margin-bottom:5px; font-size:12px; color:var(--accent); }
 .tt-preview .meta{ font-size:11.5px; }
 @media (max-width:760px){ .tt-preview{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
+/* the "add to your phone" invitation */
+.install-bar{ position:fixed; left:50%; transform:translateX(-50%); bottom:18px; z-index:79;
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap; max-width:min(560px,94vw);
+  padding:13px 16px; border-radius:18px; border:1px solid var(--t-line,#26262e);
+  background:linear-gradient(135deg,#16161d,#1d1d26); box-shadow:0 18px 44px rgba(0,0,0,.55); }
+.install-ico{ font-size:26px; }
+.install-copy{ flex:1 1 190px; min-width:0; }
+.install-copy b{ font-size:14px; color:#fff; }
+.install-copy .meta{ font-size:12px; margin-top:2px; }
+@media (max-width:620px){
+  .install-bar{ bottom:calc(74px + env(safe-area-inset-bottom,0px)); gap:8px; }
+  .install-bar .action{ flex:1 1 auto; }
+}
 /* ===== MILESTONE MARKS =====
    Earned by doing the work, so they are deliberately different from anything
    the store sells: movement and light rather than a static ring. */
@@ -4149,6 +4169,15 @@ body.theme-sportscar .hero::after {
 </div>
 
 <div id="milestonePop" class="ms-pop" hidden></div>
+
+<!-- Adding the tracker to a phone's home screen, without any app store -->
+<div id="installBar" class="install-bar" hidden>
+  <span class="install-ico">⚡</span>
+  <div class="install-copy"><b>Add 1GAMMA MB to your phone</b>
+    <div class="meta" id="installHow">It opens like an app, and works without a signal.</div></div>
+  <button class="action primary" id="installGo" onclick="doInstall()">Add to home screen</button>
+  <button class="action ghost" onclick="dismissInstall()">Not now</button>
+</div>
 
 <div id="demoBar" hidden>
   <span class="demo-what">👀 <b>Demo account</b><span class="demo-long"> — explore anything. Nothing here is saved to a real account.</span></span>
@@ -11035,6 +11064,64 @@ function renderStore() {
   }).join('');
 }
 
+/* ===== INSTALLING IT ON A PHONE =====
+   No app store involved: a phone can keep a web page as an app of its own.
+   Android fires an event we can hold on to and replay from a button. iOS has
+   no such event, so there the best we can do is say where the button is. */
+const INSTALL_DISMISSED = 'gt-install-dismissed';
+let deferredInstall = null;
+
+function isStandalone() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+function isIos() {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);   // iPadOS pretends to be a Mac
+}
+function installDismissed() {
+  try { return localStorage.getItem(INSTALL_DISMISSED) === '1'; } catch (e) { return false; }
+}
+function dismissInstall() {
+  try { localStorage.setItem(INSTALL_DISMISSED, '1'); } catch (e) {}
+  const bar = document.getElementById('installBar');
+  if (bar) bar.hidden = true;
+}
+function showInstallBar() {
+  const bar = document.getElementById('installBar');
+  if (!bar || isStandalone() || installDismissed() || gateNeeded() || demoMode()) return;
+  const how = document.getElementById('installHow');
+  const go = document.getElementById('installGo');
+  if (isIos()) {
+    if (how) how.textContent = 'In Safari: tap Share, then "Add to Home Screen".';
+    if (go) go.hidden = true;             // iOS gives us no button to press
+  } else if (!deferredInstall) {
+    return;                               // nothing to offer yet
+  }
+  bar.hidden = false;
+}
+async function doInstall() {
+  if (!deferredInstall) return;
+  deferredInstall.prompt();
+  const choice = await deferredInstall.userChoice.catch(() => null);
+  deferredInstall = null;
+  const bar = document.getElementById('installBar');
+  if (bar) bar.hidden = true;
+  if (choice && choice.outcome === 'accepted') dismissInstall();
+}
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();                     // keep it for our own button
+  deferredInstall = e;
+  showInstallBar();
+});
+window.addEventListener('appinstalled', () => { dismissInstall(); deferredInstall = null; });
+
+/* Offline support, so a morning routine can be ticked off on the bus. */
+if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => { /* fine: the app just needs a network */ });
+  });
+}
+
 /* ===== MILESTONES =====
    Things the child earns by doing the work, which change how their avatar
    looks. They are never sold in the store and never taken away once earned —
@@ -11486,6 +11573,7 @@ renderAvatarUI();
 renderDemoBar();
 renderGate();
 checkChildAge();
+setTimeout(showInstallBar, 2500);   // let them see the app before inviting them to keep it
 if (!earnedMilestones() || !Object.keys(earnedMilestones()).length) checkMilestones(false);
 applyMilestoneLook();
 renderMilestones();
