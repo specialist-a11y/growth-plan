@@ -4772,6 +4772,7 @@ body.theme-sportscar .hero::after {
         <button class="action ghost" onclick="addTask()">＋ Add Task</button>
         <button class="action ghost" onclick="resetTasksToDefault()">↺ Restore Default Routine</button>
         <button class="action ghost" onclick="toggleTaskImport()">📥 Import tasks</button>
+        <button class="action ghost" onclick="exportHomeworkCsv()">📚 Homework CSV</button>
       </div>
 
       <h3 style="font-size:16px; font-weight:800; margin:22px 0 10px;">🎁 Rewards</h3>
@@ -10006,6 +10007,55 @@ function renderParentTasks() {
       <button class="action ghost" style="padding:7px 12px; font-size:12.5px; flex:none;" onclick="removeTask('${t.id}')">Remove</button>
     </div>`;
   }).join('');
+}
+
+/* ===== HOMEWORK AS A SPREADSHEET =====
+   One row per day across every month on the device. Because this version knows
+   about deadlines, it can say whether the homework was done on time or late,
+   which a plain tick cannot. */
+const HW_TASK_ID = 'homework';
+const HW_CSV_HEAD = ['Month', 'Date', 'Weekday', 'School day', 'Homework', 'Day excused', 'Notes'];
+
+function homeworkTask() { return dailyTasks.find(t => t.id === HW_TASK_ID) || null; }
+function monthsOnDevice() {
+  const months = gtScopedKeys()
+    .map(k => (k.indexOf(MONTH_PREFIX) === 0 ? k.slice(MONTH_PREFIX.length) : ''))
+    .filter(m => /^\d{4}-\d{2}$/.test(m));
+  if (months.indexOf(currentMonth) === -1) months.push(currentMonth);
+  return months.sort();
+}
+function homeworkRows(month) {
+  const state = (month === currentMonth) ? monthState : loadLocal(month);
+  const [y, mo] = month.split('-').map(Number);
+  const last = new Date(y, mo, 0).getDate();
+  const rows = [];
+  for (let day = 1; day <= last; day++) {
+    const date = new Date(y, mo - 1, day);
+    const weekend = date.getDay() === 0 || date.getDay() === 6;
+    const rec = (state.tracker && state.tracker[day]) || null;
+    const done = !!(rec && rec.tasks && rec.tasks[HW_TASK_ID]);
+    const late = !!(rec && rec.late && rec.late[HW_TASK_ID]);
+    const excused = !!(rec && rec.excused);
+    rows.push([
+      month,
+      `${month}-${String(day).padStart(2, '0')}`,
+      date.toLocaleDateString(undefined, { weekday: 'long' }),
+      weekend ? 'No' : 'Yes',
+      weekend ? 'n/a' : (done ? (late && !excused ? 'Done late' : 'Done on time') : 'Not done'),
+      excused ? 'Yes' : 'No',
+      (rec && rec.notes) || ''
+    ]);
+  }
+  return rows;
+}
+function exportHomeworkCsv() {
+  if (!homeworkTask()) {
+    return parentMsg('&#9888;&#65039; There is no homework task in the routine to export. Add one called "homework", or export the tasks instead.', false);
+  }
+  const months = monthsOnDevice();
+  const rows = [HW_CSV_HEAD].concat(months.reduce((all, m) => all.concat(homeworkRows(m)), []));
+  const span = months.length > 1 ? `${months[0]}_to_${months[months.length - 1]}` : months[0];
+  downloadTextFile(`Homework_${childFilePart()}_${span}.csv`, toCsv(rows));
 }
 
 /* ===== DAILY TASKS IN AND OUT =====

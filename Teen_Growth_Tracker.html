@@ -4101,10 +4101,34 @@ body.gated #mobileBottomNav, body.gated .mobile-quick-nav{ display:none !importa
     <div class="section">
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px">
         <div>
-          <h2>🏫 Queen's College — Class 1GAMMA Timetable</h2>
-          <p class="chartsub">Form Teacher: <b>Mr. R. Beckles</b> • Academic Year 2026-2027</p>
+          <h2 id="ttHeading">🏫 Queen's College — Class 1GAMMA Timetable</h2>
+          <p class="chartsub" id="ttSubheading">Form Teacher: <b>Mr. R. Beckles</b> • Academic Year 2026-2027</p>
         </div>
-        <span class="timetable-badge" style="font-size:14px">Official 1GAMMA Schedule</span>
+        <span class="timetable-badge" style="font-size:14px" id="ttBadge">Official 1GAMMA Schedule</span>
+      </div>
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin:14px 0 4px;">
+        <button class="action ghost" onclick="exportTimetableCsv()">⬇ Export timetable (CSV)</button>
+        <button class="action ghost" onclick="downloadTimetableTemplate()">⬇ CSV template</button>
+        <button class="action ghost" onclick="toggleTimetableImport()">📥 Import a timetable</button>
+        <button class="action ghost" id="ttRestoreBtn" onclick="restoreBuiltInTimetable()" hidden>↺ Back to the 1GAMMA timetable</button>
+      </div>
+
+      <div id="ttImportBox" hidden style="border:1px solid #cbd5e1; border-radius:14px; padding:14px; margin:10px 0 16px; background:#f8fafc;">
+        <div style="font-size:13px; color:#334155; line-height:1.6;">
+          <b>One lesson per row:</b> <code>Day, Period, Subject, Teacher, Room, Time, Day note</code>.
+          Write <code>LUNCH</code> as the period for a lunch break. <b>Day note</b> is the reminder shown
+          above that day, like "P.E. kit needed" — fill it on any row of that day.
+          <b>School, Class and Form teacher</b> go in the last three columns of the first row only.
+          Download the template to see it laid out.
+        </div>
+        <textarea id="ttImportText" rows="6" placeholder="Day,Period,Subject,Teacher,Room,Time,Day note,School,Class,Form teacher&#10;Monday,1,MUSIC,DW,,,👟 P.E. kit needed,Queen's College,1GAMMA,Mr. R. Beckles" style="width:100%; margin-top:10px; border:1px solid #cbd5e1; border-radius:10px; padding:10px; font-family:ui-monospace,monospace; font-size:12.5px;"></textarea>
+        <div style="display:flex; gap:10px; margin-top:8px; flex-wrap:wrap; align-items:center;">
+          <input id="ttImportFile" type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" onchange="timetableImportFromFile(this)" style="font-size:13px;" />
+          <button class="action ghost" onclick="previewTimetableImport()">Check it</button>
+          <button class="action" id="ttApplyBtn" onclick="applyTimetableImport()" disabled>Use this timetable</button>
+        </div>
+        <div id="ttImportMsg" style="font-size:13px; color:#334155; margin-top:8px;"></div>
       </div>
 
       <div class="timetable-week-grid" id="fullTimetableGrid"></div>
@@ -4593,8 +4617,9 @@ const { createClient } = window.supabase || {};
 let sb = null, session = null, saveTimer = null;
 const configKey = 'growth-supabase-config-v1';
 
-// Official Queen's College Class 1GAMMA Timetable (Mr. R. Beckles)
-const gammaTimetable = {
+// The timetable the app ships with: Queen's College Class 1GAMMA (Mr. R. Beckles).
+// A different one can be imported, and is kept on this device from then on.
+const BUILT_IN_TIMETABLE = {
   school: "Queen's College",
   class: "1GAMMA",
   formTeacher: "Mr. R. Beckles",
@@ -4707,6 +4732,25 @@ const defaultSupabaseKey = 'sb_publishable_tarNTC3zixNpeSwMjlIZ6Q_xoeXnfey';
 
 let currentMonth = document.getElementById('monthPicker').value;
 let monthState = { tracker: {}, intentions: {}, novelLog: {} };
+
+const TIMETABLE_KEY = 'teen-timetable';
+function validTimetable(t) {
+  return !!(t && t.schedule && [1, 2, 3, 4, 5].every(d => t.schedule[d] && Array.isArray(t.schedule[d].periods)));
+}
+function loadTimetable() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(TIMETABLE_KEY) || 'null');
+    if (validTimetable(saved)) return saved;
+  } catch (e) {}
+  return JSON.parse(JSON.stringify(BUILT_IN_TIMETABLE));
+}
+function saveTimetable(t) {
+  localStorage.setItem(TIMETABLE_KEY, JSON.stringify(t));
+  gammaTimetable = t;
+  renderAll();
+}
+function usingBuiltInTimetable() { return !localStorage.getItem(TIMETABLE_KEY); }
+let gammaTimetable = loadTimetable();
 
 function localKey(m) { return 'teen-growth-month-' + m; }
 function loadLocal(m) {
@@ -5644,6 +5688,15 @@ function renderBadges(streak, chores, homework) {
 function renderFullTimetableTab() {
   const grid = document.getElementById('fullTimetableGrid');
   if (!grid) return;
+
+  const head = document.getElementById('ttHeading');
+  if (head) head.textContent = `🏫 ${gammaTimetable.school || 'School'} — Class ${gammaTimetable.class || ''} Timetable`.replace(/ — Class  ?Timetable$/, ' Timetable');
+  const sub = document.getElementById('ttSubheading');
+  if (sub) sub.innerHTML = gammaTimetable.formTeacher ? `Form Teacher: <b>${gammaTimetable.formTeacher}</b>` : '';
+  const badge = document.getElementById('ttBadge');
+  if (badge) badge.textContent = usingBuiltInTimetable() ? 'Official 1GAMMA Schedule' : 'Your imported timetable';
+  const restore = document.getElementById('ttRestoreBtn');
+  if (restore) restore.hidden = usingBuiltInTimetable();
   
   let html = '';
   [1, 2, 3, 4, 5].forEach(dayNum => {
@@ -5951,6 +6004,179 @@ function openToday() {
   } else {
     openDay(n.getDate());
   }
+}
+
+/* ===== THE TIMETABLE AS A SPREADSHEET =====
+   The timetable can be written out as a CSV, edited in a spreadsheet and read
+   back, so this app is not stuck with one school's schedule. */
+const TT_CSV_HEAD = ['Day', 'Period', 'Subject', 'Teacher', 'Room', 'Time', 'Day note', 'School', 'Class', 'Form teacher'];
+const TT_DAY_NAMES = { 1: 'Monday', 2: 'Tuesday', 3: 'Wednesday', 4: 'Thursday', 5: 'Friday' };
+const TT_DAY_NUM = { monday: 1, mon: 1, tuesday: 2, tue: 2, tues: 2, wednesday: 3, wed: 3,
+                     thursday: 4, thu: 4, thur: 4, thurs: 4, friday: 5, fri: 5 };
+
+function timetableToRows(t) {
+  const rows = [];
+  [1, 2, 3, 4, 5].forEach(d => {
+    const day = t.schedule[d];
+    if (!day) return;
+    (day.periods || []).forEach((item, i) => {
+      const first = rows.length === 0;
+      rows.push([
+        day.dayName || TT_DAY_NAMES[d],
+        item.p === 'LUNCH' ? 'LUNCH' : item.p,
+        item.name || '',
+        item.teacher || '',
+        item.room || '',
+        item.time || '',
+        i === 0 ? (day.badge || '') : '',
+        first ? (t.school || '') : '',
+        first ? (t.class || '') : '',
+        first ? (t.formTeacher || '') : ''
+      ]);
+    });
+  });
+  return rows;
+}
+function timetableCsv(t) {
+  return [TT_CSV_HEAD].concat(timetableToRows(t)).map(r => r.map(csvValue).join(',')).join('\n') + '\n';
+}
+function exportTimetableCsv() {
+  downloadCsv('Timetable_' + (gammaTimetable.class || 'class').replace(/[^\w-]+/g, '_') + '.csv', timetableCsv(gammaTimetable));
+}
+function downloadTimetableTemplate() {
+  downloadCsv('Timetable_template.csv', timetableCsv(BUILT_IN_TIMETABLE));
+}
+function downloadCsv(name, csv) {
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+
+/* a small CSV reader: quoted cells may hold commas, and a spreadsheet paste
+   arrives separated by tabs */
+function readCsv(text) {
+  const src = String(text || '').replace(/^\ufeff/, '').replace(/\r\n?/g, '\n');
+  const firstLine = src.split('\n').find(l => l.trim()) || '';
+  const sep = firstLine.indexOf('\t') !== -1 ? '\t' : ',';
+  const rows = []; let row = [], cell = '', quoted = false;
+  for (let i = 0; i < src.length; i++) {
+    const c = src[i];
+    if (quoted) {
+      if (c === '"') { if (src[i + 1] === '"') { cell += '"'; i++; } else quoted = false; }
+      else cell += c;
+    } else if (c === '"') quoted = true;
+    else if (c === sep) { row.push(cell.trim()); cell = ''; }
+    else if (c === '\n') { row.push(cell.trim()); rows.push(row); row = []; cell = ''; }
+    else cell += c;
+  }
+  row.push(cell.trim());
+  if (row.some(x => x !== '')) rows.push(row);
+  return rows.filter(r => r.some(x => x !== ''));
+}
+function ttDayNumber(cell) {
+  const t = String(cell || '').trim().toLowerCase().replace(/[^a-z]/g, '');
+  if (TT_DAY_NUM[t]) return TT_DAY_NUM[t];
+  const hit = Object.keys(TT_DAY_NUM).find(w => t.startsWith(w));
+  return hit ? TT_DAY_NUM[hit] : 0;
+}
+function parseTimetableCsv(text) {
+  const rows = readCsv(text);
+  const warn = [];
+  if (!rows.length) return { timetable: null, warn: ['Nothing to read yet.'], count: 0 };
+  const want = { day: 0, period: 1, subject: 2, lesson: 2, teacher: 3, room: 4, time: 5,
+                 daynote: 6, note: 6, school: 7, class: 8, formteacher: 9 };
+  const col = {};
+  rows[0].forEach((c, i) => {
+    const key = String(c || '').toLowerCase().replace(/[^a-z]/g, '');
+    if (want[key] !== undefined) col[want[key]] = i;
+  });
+  const hasHeader = col[0] !== undefined && col[2] !== undefined;
+  const at = (cells, n) => {
+    const i = hasHeader ? col[n] : n;
+    return i === undefined ? '' : String(cells[i] || '').trim();
+  };
+  const out = { school: '', class: '', formTeacher: '', schedule: {} };
+  [1, 2, 3, 4, 5].forEach(d => { out.schedule[d] = { dayName: TT_DAY_NAMES[d], badge: '', periods: [] }; });
+  let count = 0;
+  (hasHeader ? rows.slice(1) : rows).forEach(cells => {
+    const d = ttDayNumber(at(cells, 0));
+    if (!d) { if (cells.join('').trim()) warn.push(`Skipped a row with no weekday: "${(cells[0] || '').slice(0, 24)}"`); return; }
+    const subject = at(cells, 2);
+    if (!subject) return;
+    const periodRaw = at(cells, 1);
+    const isLunch = /lunch|break|recess|interval/i.test(periodRaw) || /^(lunch|break|recess|interval)$/i.test(subject);
+    const item = isLunch
+      ? { p: 'LUNCH', name: subject || 'LUNCH', time: at(cells, 5) }
+      : { p: /^\d+$/.test(periodRaw) ? Number(periodRaw) : (periodRaw || out.schedule[d].periods.length + 1),
+          name: subject, teacher: at(cells, 3), room: at(cells, 4) };
+    if (!isLunch && at(cells, 5)) item.time = at(cells, 5);
+    out.schedule[d].periods.push(item);
+    count++;
+    const note = at(cells, 6);
+    if (note && !out.schedule[d].badge) out.schedule[d].badge = note;
+    out.school = out.school || at(cells, 7);
+    out.class = out.class || at(cells, 8);
+    out.formTeacher = out.formTeacher || at(cells, 9);
+  });
+  if (!count) warn.push('No lessons were found. Each row needs a weekday and a subject.');
+  const empty = [1, 2, 3, 4, 5].filter(d => !out.schedule[d].periods.length).map(d => TT_DAY_NAMES[d]);
+  if (count && empty.length) warn.push('No lessons on ' + empty.join(', ') + ' — those days will show as free.');
+  return { timetable: count ? out : null, warn, count };
+}
+
+let ttImportParsed = null;
+function toggleTimetableImport() {
+  const box = document.getElementById('ttImportBox');
+  if (!box) return;
+  box.hidden = !box.hidden;
+  if (!box.hidden) document.getElementById('ttImportText').focus();
+}
+function timetableImportFromFile(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => { document.getElementById('ttImportText').value = String(reader.result || ''); previewTimetableImport(); };
+  reader.onerror = () => { document.getElementById('ttImportMsg').textContent = 'That file could not be read.'; };
+  reader.readAsText(file);
+}
+function previewTimetableImport() {
+  const res = parseTimetableCsv(document.getElementById('ttImportText').value);
+  ttImportParsed = res.timetable;
+  document.getElementById('ttApplyBtn').disabled = !ttImportParsed;
+  const msg = document.getElementById('ttImportMsg');
+  const lines = [];
+  if (res.count) {
+    lines.push(`<b>${res.count}</b> lesson${res.count === 1 ? '' : 's'} found` +
+      (res.timetable.school || res.timetable.class ? ` for ${[res.timetable.school, res.timetable.class].filter(Boolean).join(' · ')}` : '') + '.');
+    [1, 2, 3, 4, 5].forEach(d => {
+      const day = res.timetable.schedule[d];
+      lines.push(`<b>${TT_DAY_NAMES[d]}:</b> ` + (day.periods.length
+        ? day.periods.map(i => i.p === 'LUNCH' ? '🍱 ' + i.name : i.name).join(', ') : '<i>no lessons</i>'));
+    });
+  }
+  res.warn.forEach(w => lines.push(w));
+  msg.innerHTML = lines.join('<br>');
+}
+function applyTimetableImport() {
+  if (!ttImportParsed) return;
+  if (!confirm('Replace the timetable shown in the app with this one?')) return;
+  saveTimetable(ttImportParsed);
+  ttImportParsed = null;
+  document.getElementById('ttImportBox').hidden = true;
+  document.getElementById('ttImportText').value = '';
+  document.getElementById('ttImportMsg').textContent = '';
+  alert('Timetable updated. Export it any time to get it back as a spreadsheet.');
+}
+function restoreBuiltInTimetable() {
+  if (!confirm('Go back to the built-in 1GAMMA timetable? The imported one will be removed from this device.')) return;
+  localStorage.removeItem(TIMETABLE_KEY);
+  gammaTimetable = loadTimetable();
+  renderAll();
 }
 
 /* ===== HOMEWORK AS A SPREADSHEET =====
