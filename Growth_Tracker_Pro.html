@@ -3789,6 +3789,22 @@ body.demo-on #appSidebar{ top:var(--demo-bar-h,46px) !important; height:calc(100
 .reward-edit .row{ display:grid; grid-template-columns:2fr 1fr; gap:8px; }
 .reward-edit .acts{ display:flex; gap:8px; }
 @media (max-width:600px){ .reward-edit .row{ grid-template-columns:1fr; } }
+/* spreadsheet templates */
+.csv-help{ margin:12px 0 4px; padding:12px 14px; border:1px solid var(--t-line,#26262e); border-left:3px solid var(--accent);
+  border-radius:12px; background:var(--t-panel-2,#1b1b21); font-size:12.5px; color:var(--t-muted,#8d8d99); line-height:1.6; }
+.csv-help b{ color:var(--t-text,#f2f2f5); }
+.csv-help code{ font-family:var(--mono,monospace); font-size:11.5px; background:rgba(255,255,255,.07); padding:2px 6px; border-radius:6px; color:var(--t-text,#f2f2f5); }
+.csv-btns{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+/* something the parent should see the moment they open the dashboard */
+.pd-notice{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:16px 0 4px; padding:12px 14px;
+  border:1px solid var(--accent); border-radius:14px; background:rgba(var(--accent-rgb,255,45,45),.10); font-size:13.5px; }
+.pd-notice b{ font-weight:800; }
+.pd-notice button{ margin-left:auto; }
+/* imported task preview */
+.task-preview{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.task-preview span{ font-size:12.5px; border:1px solid var(--t-line,#26262e); background:var(--t-panel-2,#1b1b21);
+  border-radius:99px; padding:5px 11px; }
+.task-preview span small{ color:var(--t-muted,#8d8d99); margin-left:5px; }
 /* imported timetable preview */
 .tt-preview{ display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; margin-top:10px; font-size:12.5px; }
 .tt-preview > div{ background:var(--t-panel-2,#1b1b21); border:1px solid var(--t-line,#26262e); border-radius:12px; padding:8px 10px; }
@@ -4726,6 +4742,7 @@ body.theme-sportscar .hero::after {
 
       <details class="pd-group" id="pgNow" open>
         <summary>✅ Needs you now<span class="pd-hint">rewards waiting, and how the month is going</span></summary>
+      <div id="ageNotice" class="pd-notice" hidden></div>
       <h3 style="font-size:16px; font-weight:800; margin:22px 0 10px;">✅ Reward Approvals</h3>
       <div id="parentApprovals"></div>
 
@@ -4754,6 +4771,7 @@ body.theme-sportscar .hero::after {
       <div style="display:flex; gap:10px; margin-top:10px;">
         <button class="action ghost" onclick="addTask()">＋ Add Task</button>
         <button class="action ghost" onclick="resetTasksToDefault()">↺ Restore Default Routine</button>
+        <button class="action ghost" onclick="toggleTaskImport()">📥 Import tasks</button>
       </div>
 
       <h3 style="font-size:16px; font-weight:800; margin:22px 0 10px;">🎁 Rewards</h3>
@@ -4797,22 +4815,55 @@ body.theme-sportscar .hero::after {
       </div>
 
       <div id="ttImport" hidden>
-        <div class="meta" style="margin:10px 0 8px;">Copy the timetable out of a spreadsheet and paste it here, or choose a .csv file. Either layout works: one row per day, or a grid with the days across the top. Write a room or teacher in brackets, like <code>Maths (Ms. K, Rm 4)</code>.</div>
+        <div class="meta" style="margin:10px 0 8px;">Copy the timetable out of a spreadsheet and paste it here, or choose a .csv file. Either layout works: one row per day, or a grid with the days across the top. Write a room or teacher in brackets, like <code>Maths (Ms. K; Rm 4)</code> — a semicolon, since a comma would start a new column.</div>
         <textarea id="ttImportText" rows="6" placeholder="Monday, Maths (Ms. K, Rm 4), English, Lunch, Science&#10;Tuesday, Spanish, History, Lunch, PE" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; font-family:var(--mono, monospace); font-size:13px;"></textarea>
         <div style="display:flex; gap:10px; margin-top:8px; flex-wrap:wrap; align-items:center;">
           <input id="ttImportFile" type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" onchange="ttImportFromFile(this)" style="font-size:13px;" />
           <button class="action ghost" onclick="ttPreviewImport()">Check it</button>
           <button class="action primary" id="ttImportApply" onclick="ttApplyImport()" disabled>Use this timetable</button>
         </div>
+        <div class="csv-help">
+          <b>Or work in a spreadsheet.</b> The template has one lesson per row:
+          <code>Day, Subject, Teacher, Room, Time</code>. Only <b>Day</b> and <b>Subject</b> are needed —
+          write <code>Lunch</code> or <code>Break</code> as the subject for a break.
+          <div class="csv-btns">
+            <button class="action ghost" onclick="ttDownloadTemplate()">⬇ CSV template</button>
+            <button class="action ghost" onclick="ttDownloadCurrent()">⬇ Export this timetable</button>
+          </div>
+        </div>
         <div id="ttImportMsg" class="meta" style="margin-top:8px;"></div>
         <div id="ttImportPreview"></div>
       </div>
 
+      <div id="taskImport" hidden>
+        <div class="csv-help">
+          <b>One task per row:</b> <code>Task, When, Emoji, Id</code>.
+          <b>When</b> is one of <code>morning</code>, <code>chores</code>, <code>evening</code>,
+          <code>laundry</code> or <code>weekly</code>. <b>Id</b> is only there so an exported file can
+          come back without losing the history behind each task — leave it blank for anything new.
+          <div class="csv-btns">
+            <button class="action ghost" onclick="tasksDownloadTemplate()">⬇ CSV template</button>
+            <button class="action ghost" onclick="tasksDownloadCurrent()">⬇ Export these tasks</button>
+          </div>
+        </div>
+        <textarea id="taskImportText" rows="6" placeholder="Task,When,Emoji,Id&#10;Wash face,morning,🧼,&#10;Homework done,evening,📚," style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; font-family:var(--mono, monospace); font-size:13px;"></textarea>
+        <div style="display:flex; gap:10px; margin-top:8px; flex-wrap:wrap; align-items:center;">
+          <input id="taskImportFile" type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" onchange="tasksImportFromFile(this)" style="font-size:13px;" />
+          <button class="action ghost" onclick="tasksPreviewImport()">Check it</button>
+          <button class="action primary" id="taskImportApply" onclick="tasksApplyImport()" disabled>Use these tasks</button>
+        </div>
+        <div id="taskImportMsg" class="meta" style="margin-top:8px;"></div>
+        <div id="taskImportPreview"></div>
+      </div>
+
       <h3 id="pfSection" style="font-size:16px; font-weight:800; margin:22px 0 6px;">👦 Child &amp; Country</h3>
       <div class="meta" style="margin-bottom:10px;">The name shown in the app, and the country whose public holidays the calendar should follow.</div>
-      <div id="pfGrid" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+      <div id="pfGrid" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:10px;">
         <div><label style="font-weight:700; font-size:13px;">Child's name</label><input id="pfChildName" type="text" onchange="saveProfileFields()" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="e.g. Jayden" /></div>
-        <div><label style="font-weight:700; font-size:13px;">Age</label><select id="pfChildAge" data-age-select onchange="saveProfileFields()" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;"></select></div>
+        <div><label style="font-weight:700; font-size:13px;">Age</label><select id="pfChildAge" data-age-select onchange="saveProfileFields()" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;"></select>
+          <div id="pfAgeFromDob" class="meta" style="margin-top:4px;" hidden></div></div>
+        <div><label style="font-weight:700; font-size:13px;">Date of birth <span class="meta">(optional)</span></label><input id="pfChildDob" type="date" onchange="saveProfileFields()" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" />
+          <div class="meta" style="margin-top:4px;">Set this and the age keeps itself up to date.</div></div>
         <div><label style="font-weight:700; font-size:13px;">Country</label><select id="pfCountry" data-country-select onchange="saveProfileFields()" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;"></select></div>
       </div>
       <div id="pfNote" class="meta" style="margin-top:8px;"></div>
@@ -5367,6 +5418,60 @@ function renderTtDayEditor() {
     ${rows || `<div class="meta" style="padding:8px 0;">No periods yet for ${TT_DAYS[ttEditDay]}. Add a period to get started.</div>`}`;
 }
 
+/* ===== CSV IN AND OUT =====
+   Parents work in a spreadsheet, so everything that can be typed in bulk can
+   be downloaded as a template, filled in, and read back. */
+function parseCsv(text) {
+  const src = String(text || '').replace(/\r\n?/g, '\n');
+  // A spreadsheet paste is tab-separated on every line, and its cells may well
+  // contain commas. Judge by the first line that has anything on it.
+  const first = src.split('\n').find(l => l.trim()) || '';
+  const sep = first.indexOf('\t') !== -1 ? '\t' : ',';
+  const rows = [];
+  let row = [], cell = '', quoted = false;
+  for (let i = 0; i < src.length; i++) {
+    const c = src[i];
+    if (quoted) {
+      if (c === '"') { if (src[i + 1] === '"') { cell += '"'; i++; } else quoted = false; }
+      else cell += c;
+    } else if (c === '"') quoted = true;
+    else if (c === sep) { row.push(cell.trim()); cell = ''; }
+    else if (c === '\n') { row.push(cell.trim()); rows.push(row); row = []; cell = ''; }
+    else cell += c;
+  }
+  row.push(cell.trim());
+  if (row.some(x => x !== '')) rows.push(row);
+  return rows.filter(r => r.some(x => x !== ''));
+}
+function csvCell(v) {
+  const t = String(v == null ? '' : v);
+  return /[",\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+}
+function toCsv(rows) { return rows.map(r => r.map(csvCell).join(',')).join('\n') + '\n'; }
+function downloadTextFile(name, text, type) {
+  // a BOM so Excel opens the emoji and accents correctly
+  const blob = new Blob(['\ufeff' + text], { type: (type || 'text/csv') + ';charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+function childFilePart() {
+  return ((childDisplayName() || 'child').replace(/[^\w-]+/g, '_')) + '_' + new Date().toISOString().slice(0, 10);
+}
+/* a header row is one whose first cells name the columns we expect */
+function csvHeaderMap(cells, wanted) {
+  const found = {};
+  cells.forEach((c, i) => {
+    const key = String(c || '').toLowerCase().replace(/[^a-z]/g, '');
+    if (wanted[key] !== undefined) found[wanted[key]] = i;
+  });
+  return found;
+}
+
 /* ===== IMPORTING A TIMETABLE =====
    Parents can paste their school's timetable straight out of a spreadsheet, or
    pick a .csv. Two layouts are understood: a row per day, or a grid with the
@@ -5380,12 +5485,7 @@ function ttDayFromText(cell) {
   const hit = TT_DAY_WORDS.find(([w]) => t === w || t.startsWith(w));
   return hit ? hit[1] : 0;
 }
-function ttSplitRows(text) {
-  return String(text || '').replace(/\r/g, '').split('\n').map(line => {
-    const cells = line.indexOf('\t') !== -1 ? line.split('\t') : line.split(',');
-    return cells.map(c => c.trim().replace(/^"(.*)"$/, '$1').trim());
-  }).filter(cells => cells.some(c => c));
-}
+function ttSplitRows(text) { return parseCsv(text); }
 function ttCellToSlot(cell) {
   const raw = String(cell || '').trim();
   if (!raw || /^[-–—.]+$/.test(raw)) return null;
@@ -5412,11 +5512,41 @@ function ttCellToSlot(cell) {
   return { type: 'class', subject: subject.slice(0, 40), teacher: teacher.slice(0, 30), room: room.slice(0, 20) };
 }
 
+const TT_COLUMNS = { day: 'day', subject: 'subject', lesson: 'subject', class: 'subject',
+                     teacher: 'teacher', staff: 'teacher', room: 'room', location: 'room',
+                     time: 'time', period: 'time' };
+
 function parseTimetableText(text) {
   const rows = ttSplitRows(text);
   const days = {}; const warn = [];
   for (let d = 1; d <= 5; d++) days[d] = { reminder: '', slots: [] };
   if (!rows.length) return { days, warn: ['Nothing to read yet.'], count: 0 };
+
+  // the template's layout: a header row, then one lesson per row
+  const head = csvHeaderMap(rows[0], TT_COLUMNS);
+  if (head.day !== undefined && head.subject !== undefined) {
+    rows.slice(1).forEach(cells => {
+      const day = ttDayFromText(cells[head.day]);
+      const subject = (cells[head.subject] || '').trim();
+      if (!day) { if (cells.join('').trim()) warn.push(`Skipped a row with no weekday: "${(cells[head.day] || cells[0] || '').slice(0, 24)}"`); return; }
+      if (!subject) return;
+      const time = head.time !== undefined ? (cells[head.time] || '').trim() : '';
+      const low = subject.toLowerCase();
+      if (TT_BREAK_WORDS.some(w => low.includes(w))) {
+        days[day].slots.push({ type: 'break', label: subject.slice(0, 30), time: time.slice(0, 20) });
+        return;
+      }
+      days[day].slots.push({
+        type: 'class',
+        subject: subject.slice(0, 40),
+        teacher: (head.teacher !== undefined ? (cells[head.teacher] || '') : '').trim().slice(0, 30),
+        room: (head.room !== undefined ? (cells[head.room] || '') : '').trim().slice(0, 20)
+      });
+    });
+    const n = Object.values(days).reduce((t, d) => t + d.slots.length, 0);
+    if (!n) warn.push('The columns were understood, but no lessons were found under them.');
+    return { days, warn, count: n };
+  }
 
   const headerDays = rows[0].map(ttDayFromText);
   const gridLayout = headerDays.filter(Boolean).length >= 2;
@@ -5442,6 +5572,31 @@ function parseTimetableText(text) {
   const count = Object.values(days).reduce((t, d) => t + d.slots.length, 0);
   if (!count) warn.push('No lessons were found. Check that each row starts with a day, or that the days run across the top.');
   return { days, warn, count };
+}
+
+const TT_CSV_HEAD = ['Day', 'Subject', 'Teacher', 'Room', 'Time'];
+function ttTemplateCsv() {
+  return toCsv([TT_CSV_HEAD,
+    ['Monday', 'Maths', 'Ms. King', 'Rm 4', '08:30'],
+    ['Monday', 'English', 'Mr. Alleyne', 'Rm 12', '09:30'],
+    ['Monday', 'Lunch', '', '', '12:00'],
+    ['Monday', 'Science', 'Ms. Grant', 'Lab 2', '13:00'],
+    ['Tuesday', 'Spanish', '', 'Rm 7', '08:30'],
+    ['Tuesday', 'PE', 'Coach Benn', 'Field', '10:30']]);
+}
+function ttCurrentCsv() {
+  const rows = [TT_CSV_HEAD];
+  [1, 2, 3, 4, 5].forEach(d => (schoolTimetable.days[d].slots || []).forEach(sl => {
+    rows.push(sl.type === 'break'
+      ? [TT_DAYS[d], sl.label || 'Break', '', '', sl.time || '']
+      : [TT_DAYS[d], sl.subject || '', sl.teacher || '', sl.room || '', '']);
+  }));
+  return toCsv(rows);
+}
+function ttDownloadTemplate() { downloadTextFile('Timetable_template.csv', ttTemplateCsv()); }
+function ttDownloadCurrent() {
+  if (!hasTimetable()) return parentMsg('⚠️ There is no timetable to export yet. Download the template instead.', false);
+  downloadTextFile('Timetable_' + childFilePart() + '.csv', ttCurrentCsv());
 }
 
 let ttImportParsed = null;
@@ -5629,6 +5784,64 @@ const AGE_MIN = 5, AGE_MAX = 19;
 function countryName(code) { const c = COUNTRY_LIST.find(x => x.code === code); return c ? c.name : ''; }
 function activeCountry() { const c = (typeof parentConfig === 'function' && parentConfig()) || {}; return c.country || ''; }
 function childAge() { const c = (typeof parentConfig === 'function' && parentConfig()) || {}; return c.childAge || ''; }
+
+/* A child gets a year older every year, so an age typed once goes stale. With
+   a date of birth the age is worked out fresh each time the app opens, and the
+   parent is told when it changes — their routine was set up for a younger
+   child. */
+function ageFromDob(dob) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dob || '').trim());
+  if (!m) return null;
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const born = new Date(y, mo - 1, d);
+  if (born.getFullYear() !== y || born.getMonth() !== mo - 1 || born.getDate() !== d) return null;
+  const now = new Date();
+  if (born > now) return null;
+  let age = now.getFullYear() - y;
+  const had = (now.getMonth() > mo - 1) || (now.getMonth() === mo - 1 && now.getDate() >= d);
+  if (!had) age--;
+  return age >= 0 && age < 120 ? age : null;
+}
+function childDob() { const c = (typeof parentConfig === 'function' && parentConfig()) || {}; return c.childDob || ''; }
+function childAgeNow() {
+  const fromDob = ageFromDob(childDob());
+  return fromDob === null ? (childAge() || '') : String(fromDob);
+}
+function isBirthdayToday() {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(childDob());
+  if (!m) return false;
+  const now = new Date();
+  return now.getMonth() === Number(m[2]) - 1 && now.getDate() === Number(m[3]);
+}
+/* Called on load: notice the birthday once, then leave the parent alone. */
+function checkChildAge() {
+  const cfg = (typeof parentConfig === 'function' && parentConfig()) || null;
+  if (!cfg || !cfg.childDob) return;
+  const now = childAgeNow();
+  if (!now || String(cfg.childAge || '') === now) return;
+  const was = String(cfg.childAge || '');
+  saveStore(parentCfgKey, Object.assign({}, cfg, { childAge: now, ageNoticed: was || 'new' }));
+  renderAgeNotice();
+}
+function dismissAgeNotice() {
+  const cfg = parentConfig() || {};
+  saveStore(parentCfgKey, Object.assign({}, cfg, { ageNoticed: '' }));
+  renderAgeNotice();
+}
+function renderAgeNotice() {
+  const box = document.getElementById('ageNotice');
+  if (!box) return;
+  const cfg = parentConfig() || {};
+  const was = cfg.ageNoticed || '';
+  const age = childAgeNow();
+  if (!was || !age) { box.hidden = true; return; }
+  const who = childDisplayName() || 'Your child';
+  box.hidden = false;
+  box.innerHTML = `<div><b>${isBirthdayToday() ? '🎂' : '🎈'} ${escapeHTML(who)} is now ${escapeHTML(age)}.</b>
+    ${was === 'new' ? 'Their age is now worked out from their date of birth.'
+                    : `The routine and rewards were set up at ${escapeHTML(was)} — worth a look.`}</div>
+    <button class="action ghost" onclick="dismissAgeNotice()">Got it</button>`;
+}
 function hasHolidayCalendar() { return HOLIDAY_COUNTRIES.indexOf(activeCountry()) !== -1; }
 function fillCountrySelects() {
   const opts = sel => '<option value="">Select country…</option>' +
@@ -5657,7 +5870,9 @@ function saveProfileFields() {
   const nameEl = document.getElementById('pfChildName');
   const name = (nameEl ? nameEl.value : '').trim();
   cfg.childName = name;
-  cfg.childAge = (document.getElementById('pfChildAge') || {}).value || '';
+  cfg.childDob = (document.getElementById('pfChildDob') || {}).value || '';
+  const derived = ageFromDob(cfg.childDob);
+  cfg.childAge = derived === null ? ((document.getElementById('pfChildAge') || {}).value || '') : String(derived);
   cfg.country = (document.getElementById('pfCountry') || {}).value || '';
   saveStore(parentCfgKey, cfg);
   if (name) localStorage.setItem(childNameKey, name); else localStorage.removeItem(childNameKey);
@@ -5695,6 +5910,15 @@ function renderParentProfile() {
   const nameEl = document.getElementById('pfChildName');
   if (nameEl && document.activeElement !== nameEl) nameEl.value = localStorage.getItem(childNameKey) || cfg.childName || '';
   const ageEl = document.getElementById('pfChildAge'); if (ageEl) ageEl.value = cfg.childAge || '';
+  const dobEl = document.getElementById('pfChildDob'); if (dobEl) dobEl.value = cfg.childDob || '';
+  const fromDob = ageFromDob(cfg.childDob || '');
+  const ageNote = document.getElementById('pfAgeFromDob');
+  if (ageNote) {
+    ageNote.hidden = fromDob === null;
+    ageNote.textContent = fromDob === null ? '' : `Worked out from the date of birth${isBirthdayToday() ? ' — happy birthday! 🎂' : ''}`;
+  }
+  if (ageEl) ageEl.disabled = fromDob !== null;
+  renderAgeNotice();
   const ctEl = document.getElementById('pfCountry'); if (ctEl) ctEl.value = cfg.country || '';
   const ct = activeCountry();
   note.textContent = !ct
@@ -9784,6 +10008,118 @@ function renderParentTasks() {
   }).join('');
 }
 
+/* ===== DAILY TASKS IN AND OUT =====
+   The id column matters: a task's id is what every past tick is filed under,
+   so keeping it means a re-imported routine keeps its history. */
+const TASK_WHENS = ['morning', 'chores', 'evening', 'laundry', 'weekly'];
+const TASK_COLUMNS = { task: 'task', name: 'task', when: 'when', category: 'when', cat: 'when',
+                       emoji: 'emoji', icon: 'emoji', id: 'id' };
+const TASK_CSV_HEAD = ['Task', 'When', 'Emoji', 'Id'];
+const EMOJI_LEAD = /^([\p{Extended_Pictographic}\u200d\ufe0f\u{1f3fb}-\u{1f3ff}]+)\s*/u;
+
+function splitTaskName(name) {
+  const m = EMOJI_LEAD.exec(String(name || ''));
+  return m ? { emoji: m[1], text: String(name).slice(m[0].length).trim() } : { emoji: '', text: String(name || '').trim() };
+}
+function tasksCurrentCsv() {
+  return toCsv([TASK_CSV_HEAD].concat(dailyTasks.map(t => {
+    const { emoji, text } = splitTaskName(t.name);
+    return [text, t.cat || 'morning', emoji, t.id];
+  })));
+}
+function tasksTemplateCsv() {
+  return toCsv([TASK_CSV_HEAD,
+    ['Wash face', 'morning', '🧼', ''],
+    ['Make the bed', 'morning', '🛏️', ''],
+    ['Homework done', 'evening', '📚', ''],
+    ['Dishes after dinner', 'chores', '🍽️', ''],
+    ['Put laundry away', 'laundry', '🧺', ''],
+    ['Tidy room properly', 'weekly', '🧹', '']]);
+}
+function tasksDownloadTemplate() { downloadTextFile('Daily_tasks_template.csv', tasksTemplateCsv()); }
+function tasksDownloadCurrent() { downloadTextFile('Daily_tasks_' + childFilePart() + '.csv', tasksCurrentCsv()); }
+
+function slugTaskId(text, taken) {
+  let base = String(text || 'task').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 24) || 'task';
+  let id = base, n = 2;
+  while (taken.has(id)) id = base + '_' + n++;
+  taken.add(id);
+  return id;
+}
+function parseTasksCsv(text) {
+  const rows = parseCsv(text);
+  const warn = [], tasks = [];
+  if (!rows.length) return { tasks, warn: ['Nothing to read yet.'] };
+  const head = csvHeaderMap(rows[0], TASK_COLUMNS);
+  const named = head.task !== undefined;
+  const body = named ? rows.slice(1) : rows;
+  const byName = new Map(dailyTasks.map(t => [splitTaskName(t.name).text.toLowerCase(), t.id]));
+  const taken = new Set();
+  body.forEach(cells => {
+    const text = (named ? cells[head.task] : cells[0] || '').trim();
+    if (!text) return;
+    let when = (named && head.when !== undefined ? cells[head.when] : cells[1] || '').trim().toLowerCase();
+    if (!TASK_WHENS.includes(when)) {
+      if (when) warn.push(`"${text}": "${when}" isn't one of ${TASK_WHENS.join(', ')} — filed under morning.`);
+      when = 'morning';
+    }
+    const emoji = (named && head.emoji !== undefined ? cells[head.emoji] : cells[2] || '').trim();
+    const givenId = (named && head.id !== undefined ? cells[head.id] : '').trim();
+    // keep the id when one is given or the task is already there, so history survives
+    const known = givenId && dailyTasks.some(t => t.id === givenId) ? givenId : byName.get(text.toLowerCase());
+    const id = known && !taken.has(known) ? (taken.add(known), known) : slugTaskId(text, taken);
+    tasks.push({ id, name: (emoji ? emoji + ' ' : '') + text, cat: when });
+  });
+  if (!tasks.length) warn.push('No tasks were found. The first column should be the task itself.');
+  return { tasks, warn };
+}
+
+let taskImportParsed = null;
+function toggleTaskImport() {
+  const box = document.getElementById('taskImport');
+  if (!box) return;
+  box.hidden = !box.hidden;
+  if (!box.hidden) document.getElementById('taskImportText').focus();
+}
+function tasksImportFromFile(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => { document.getElementById('taskImportText').value = String(reader.result || '').replace(/^\ufeff/, ''); tasksPreviewImport(); };
+  reader.onerror = () => { document.getElementById('taskImportMsg').textContent = 'That file could not be read.'; };
+  reader.readAsText(file);
+}
+function tasksPreviewImport() {
+  const res = parseTasksCsv(document.getElementById('taskImportText').value);
+  taskImportParsed = res.tasks.length ? res : null;
+  document.getElementById('taskImportApply').disabled = !taskImportParsed;
+  const kept = res.tasks.filter(t => dailyTasks.some(o => o.id === t.id)).length;
+  document.getElementById('taskImportMsg').innerHTML = res.tasks.length
+    ? `Found <b>${res.tasks.length}</b> task${res.tasks.length === 1 ? '' : 's'}${kept ? `, ${kept} of them already in the routine (their history is kept)` : ''}.`
+      + (res.warn.length ? '<br>' + res.warn.map(escapeHTML).join('<br>') : '')
+    : res.warn.map(escapeHTML).join('<br>');
+  document.getElementById('taskImportPreview').innerHTML = !res.tasks.length ? ''
+    : `<div class="task-preview">${res.tasks.map(t => `<span>${escapeHTML(t.name)}<small>${escapeHTML(t.cat)}</small></span>`).join('')}</div>`;
+}
+function tasksApplyImport() {
+  if (!taskImportParsed) return;
+  const going = dailyTasks.filter(t => !taskImportParsed.tasks.some(n => n.id === t.id)).length;
+  const msg = going
+    ? `Replace the routine with these ${taskImportParsed.tasks.length} tasks? ${going} current task${going === 1 ? '' : 's'} will be removed.`
+    : `Use these ${taskImportParsed.tasks.length} tasks as the routine?`;
+  if (!confirm(msg)) return;
+  dailyTasks = taskImportParsed.tasks.slice();
+  saveStore(tasksKey, dailyTasks);
+  taskImportParsed = null;
+  document.getElementById('taskImport').hidden = true;
+  document.getElementById('taskImportText').value = '';
+  document.getElementById('taskImportPreview').innerHTML = '';
+  document.getElementById('taskImportMsg').textContent = '';
+  renderParentTasks();
+  renderAll();
+  parentMsg('&#128994; Routine imported. Past ticks are kept for every task that was already there.', true);
+}
+
 function addTask() {
   const name = (document.getElementById('newTaskName').value || '').trim();
   const cat  = document.getElementById('newTaskCat').value;
@@ -10747,6 +11083,7 @@ renderRedemptionHistory();
 renderAvatarUI();
 renderDemoBar();
 renderGate();
+checkChildAge();
 (function () {
   let asked = null;
   try { asked = sessionStorage.getItem('gt-open-auth'); sessionStorage.removeItem('gt-open-auth'); } catch (e) {}

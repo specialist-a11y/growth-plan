@@ -1,3 +1,10 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="1GAMMA MB is a daily growth and routine tracker for teens that parents set up: checklists, timetable, points, rewards and deadlines. 15 days free.">
+<meta name="theme-color" content="#f2f5f9">
 <title>1GAMMA MB</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Gochi+Hand&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
@@ -197,7 +204,7 @@
   .feed .empty{ background:transparent; border-style:dashed; color:#7d8494; }
   @media (prefers-reduced-motion: no-preference){ .feed li.new{ animation:feedIn .35s ease-out; } }
   @keyframes feedIn{ from{ transform:translateY(-6px); opacity:.2; } }
-  .reset-link{ align-self:flex-start; background:none; border:0; color:#aeb4c2; text-decoration:underline; text-underline-offset:4px; cursor:pointer; padding:0; font-size:14.5px; }
+  .reset-link{ align-self:flex-start; background:none; border:0; color:#aeb4c2; text-decoration:underline; text-underline-offset:4px; cursor:pointer; padding:7px 0; font-size:14.5px; }
   @media (max-width:980px){ .demo .wrap{ grid-template-columns:1fr; } .demo-stage{ order:-1; } }
 
   .demo-stage{ display:flex; flex-direction:column; align-items:center; gap:14px; }
@@ -292,7 +299,7 @@
 
   /* ---------- features ---------- */
   .bento{ display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:18px; }
-  .feat{ position:relative; background:var(--card); border:1px solid var(--card-line); border-radius:22px; padding:24px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:12px; }
+  .feat{ position:relative; min-width:0; background:var(--card); border:1px solid var(--card-line); border-radius:22px; padding:24px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:12px; }
   .feat h3{ font-size:24px; font-weight:750; line-height:1.08; }
   .feat p{ color:var(--ink-soft); font-size:16px; }
   .feat.tape::before{ content:""; position:absolute; top:-12px; left:50%; width:110px; height:26px; transform:translateX(-50%) rotate(-3deg); background:var(--tape); border-radius:3px; }
@@ -304,7 +311,7 @@
   @media (max-width:980px){ .f-timetable, .f-holidays, .f-rewards, .f-quote, .f-themes, .f-pin, .f-backup{ grid-column:span 3; } }
   @media (max-width:680px){ .bento{ grid-template-columns:1fr; } .f-timetable, .f-holidays, .f-rewards, .f-quote, .f-themes, .f-pin, .f-backup{ grid-column:auto; } }
 
-  .tt-scroll{ overflow-x:auto; margin-inline:-4px; padding:4px; }
+  .tt-scroll{ min-width:0; overflow-x:auto; -webkit-overflow-scrolling:touch; margin-inline:-4px; padding:4px; }
   .tt{ display:grid; grid-template-columns:repeat(5,minmax(96px,1fr)); gap:8px; min-width:520px; }
   .tt-day{ display:flex; flex-direction:column; gap:6px; }
   .tt-day b{ font-family:var(--mono); font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); padding-bottom:4px; border-bottom:2px solid var(--rule); }
@@ -431,6 +438,8 @@
   footer a:hover{ text-decoration:underline; }
   .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0; }
 </style>
+</head>
+<body>
 
 <header class="nav">
   <div class="wrap">
@@ -1346,3 +1355,6 @@
   renderPlans();
 })();
 </script>
+
+</body>
+</html>
