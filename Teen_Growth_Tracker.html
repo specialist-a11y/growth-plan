@@ -4068,6 +4068,7 @@ body.gated #mobileBottomNav, body.gated .mobile-quick-nav{ display:none !importa
     <button class="action ghost" id="authBtn" onclick="openSettings()">🔑 Sign In / Account</button>
     <button class="action ghost" onclick="syncNow()">🔄 Sync Now</button>
     <button class="action ghost" onclick="exportData()">💾 Backup Data</button>
+    <button class="action ghost" onclick="exportHomeworkCsv()">📚 Homework CSV</button>
   </div>
 
   <!-- Tabs Navigation -->
@@ -5950,6 +5951,68 @@ function openToday() {
   } else {
     openDay(n.getDate());
   }
+}
+
+/* ===== HOMEWORK AS A SPREADSHEET =====
+   Homework is a tick per school day. This writes one row per day for every
+   month saved on this device, so a parent can sort, filter or hand it to a
+   teacher. Weekends are marked rather than left blank, so an empty cell always
+   means "not done" and never "wasn't asked". */
+const HW_TASK_ID = 'homework';
+const HW_HEAD = ['Month', 'Date', 'Weekday', 'School day', 'Homework done', 'Notes'];
+
+function csvValue(v) {
+  const t = String(v == null ? '' : v);
+  return /[",\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+}
+function monthsOnDevice() {
+  const months = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    const m = k && /^teen-growth-month-(\d{4}-\d{2})$/.exec(k);
+    if (m) months.push(m[1]);
+  }
+  if (months.indexOf(currentMonth) === -1) months.push(currentMonth);
+  return months.sort();
+}
+function homeworkRows(month) {
+  const state = (month === currentMonth) ? monthState : loadLocal(month);
+  const [y, mo] = month.split('-').map(Number);
+  const last = new Date(y, mo, 0).getDate();
+  const rows = [];
+  for (let day = 1; day <= last; day++) {
+    const date = new Date(y, mo - 1, day);
+    const dow = date.getDay();
+    const weekend = (dow === 0 || dow === 6);
+    const rec = (state.tracker && state.tracker[day]) || null;
+    const done = !!(rec && rec.tasks && rec.tasks[HW_TASK_ID]);
+    rows.push([
+      month,
+      `${month}-${String(day).padStart(2, '0')}`,
+      date.toLocaleDateString(undefined, { weekday: 'long' }),
+      weekend ? 'No' : 'Yes',
+      weekend ? 'n/a' : (done ? 'Yes' : 'No'),
+      (rec && rec.notes) || ''
+    ]);
+  }
+  return rows;
+}
+function exportHomeworkCsv() {
+  const months = monthsOnDevice();
+  const rows = [HW_HEAD].concat(months.reduce((all, m) => all.concat(homeworkRows(m)), []));
+  const csv = rows.map(r => r.map(csvValue).join(',')).join('\n') + '\n';
+  const name = months.length > 1
+    ? `Homework_${months[0]}_to_${months[months.length - 1]}.csv`
+    : `Homework_${months[0]}.csv`;
+  // the BOM keeps emoji and accents readable when Excel opens it
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 }
 
 function exportData() {
