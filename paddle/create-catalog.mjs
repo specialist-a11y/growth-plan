@@ -20,7 +20,12 @@ const KEY = process.env.PADDLE_API_KEY || '';
 
 /* ---------------------------------------------------------------- catalogue
    Two plans, matching what the sales page sells today. Edit the amounts here;
-   everything else follows. Prices are per seat-less subscription, one per family.   */
+   everything else follows.
+
+   USD only, charged worldwide in USD — no country overrides. The first families
+   are in Barbados and the US, and Paddle cannot charge in BBD in any case, so a
+   Caribbean parent pays the same dollar price as an American one. Add
+   unit_price_overrides later if a market earns it.   */
 const TAX_CATEGORY = 'saas';          // software sold as a subscription
 
 /* A trial set here is a PADDLE-run trial, which takes a card up front.
@@ -40,11 +45,6 @@ const CATALOG = [
         description: 'Standard, billed monthly',
         billing_cycle: { interval: 'month', frequency: 1 },
         unit_price: { amount: '399', currency_code: 'USD' },      // $3.99
-        overrides: [
-          { country_codes: ['GB'], amount: '349', currency_code: 'GBP' },   // £3.49
-          { country_codes: ['IE'], amount: '399', currency_code: 'EUR' },   // €3.99
-          { country_codes: ['AU'], amount: '599', currency_code: 'AUD' }    // A$5.99
-        ]
       },
       {
         key: 'standardYearly',
@@ -52,11 +52,6 @@ const CATALOG = [
         description: 'Standard, billed yearly — about two months free',
         billing_cycle: { interval: 'year', frequency: 1 },
         unit_price: { amount: '3900', currency_code: 'USD' },     // $39.00
-        overrides: [
-          { country_codes: ['GB'], amount: '3400', currency_code: 'GBP' },  // £34
-          { country_codes: ['IE'], amount: '3900', currency_code: 'EUR' },  // €39
-          { country_codes: ['AU'], amount: '5900', currency_code: 'AUD' }   // A$59
-        ]
       }
     ]
   },
@@ -71,11 +66,6 @@ const CATALOG = [
         description: 'Pro, billed monthly',
         billing_cycle: { interval: 'month', frequency: 1 },
         unit_price: { amount: '699', currency_code: 'USD' },      // $6.99
-        overrides: [
-          { country_codes: ['GB'], amount: '599', currency_code: 'GBP' },   // £5.99
-          { country_codes: ['IE'], amount: '699', currency_code: 'EUR' },   // €6.99
-          { country_codes: ['AU'], amount: '999', currency_code: 'AUD' }    // A$9.99
-        ]
       },
       {
         key: 'proYearly',
@@ -83,11 +73,6 @@ const CATALOG = [
         description: 'Pro, billed yearly — about two months free',
         billing_cycle: { interval: 'year', frequency: 1 },
         unit_price: { amount: '6900', currency_code: 'USD' },     // $69.00
-        overrides: [
-          { country_codes: ['GB'], amount: '5900', currency_code: 'GBP' },  // £59
-          { country_codes: ['IE'], amount: '6900', currency_code: 'EUR' },  // €69
-          { country_codes: ['AU'], amount: '9900', currency_code: 'AUD' }   // A$99
-        ]
       }
     ]
   }
