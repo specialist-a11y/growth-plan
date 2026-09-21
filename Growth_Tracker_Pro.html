@@ -4172,7 +4172,7 @@ body.theme-sportscar .hero::after {
 
 <!-- Adding the tracker to a phone's home screen, without any app store -->
 <div id="installBar" class="install-bar" hidden>
-  <span class="install-ico">🏫</span>
+  <span class="install-ico">🗂️</span>
   <div class="install-copy"><b>Add 1GAMMA MB to your phone</b>
     <div class="meta" id="installHow">It opens like an app, and works without a signal.</div></div>
   <button class="action primary" id="installGo" onclick="doInstall()">Add to home screen</button>
@@ -4240,7 +4240,7 @@ body.theme-sportscar .hero::after {
         <span>Parent Dashboard</span>
       </li>
       <li class="sidebar-nav-item" id="sideInstall" onclick="installApp()">
-        <span class="sidebar-nav-item-icon">🏫</span>
+        <span class="sidebar-nav-item-icon">🗂️</span>
         <span>Download as app</span>
       </li>
     </ul>
@@ -5045,7 +5045,7 @@ body.theme-sportscar .hero::after {
         <span class="chev">›</span>
       </button>
       <button class="m-wide" id="moreInstall" onclick="closeModal('moreModal'); installApp()">
-        <div class="ic">🏫</div>
+        <div class="ic">🗂️</div>
         <div><strong>Download as app</strong><small>Keep it on your home screen, works offline</small></div>
         <span class="chev">›</span>
       </button>
@@ -11119,7 +11119,7 @@ function showInstallBar(force) {
 function installApp() {
   if (isStandalone()) {
     // an undeclared name would throw, so check the safe way
-    if (typeof toast === 'function') toast('🏫 It is already on your home screen.');
+    if (typeof toast === 'function') toast('🗂️ It is already on your home screen.');
     else alert('1GAMMA MB is already on your home screen.');
     return;
   }
