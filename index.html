@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="1GAMMA MB is a daily growth and routine tracker for teens that parents set up: checklists, timetable, points, rewards and deadlines. 15 days free.">
 <meta name="theme-color" content="#f2f5f9">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="1GAMMA MB">
 <title>1GAMMA MB</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Gochi+Hand&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
@@ -351,6 +354,18 @@
   .status-cycle i{ width:9px; height:9px; border-radius:50%; background:#5fd395; box-shadow:0 0 0 4px rgba(95,211,149,.2); }
   .status-cycle small{ color:#969cab; }
   .status-cycle.saving i{ background:#f5b93b; box-shadow:0 0 0 4px rgba(245,185,59,.2); }
+
+  /* ---------- keeping it on a phone ---------- */
+  .install-card{ display:flex; align-items:center; gap:26px; flex-wrap:wrap; padding:26px 28px;
+    background:var(--card); border:1px solid var(--card-line); border-radius:24px; box-shadow:var(--shadow); }
+  .install-art img{ border-radius:20px; box-shadow:0 10px 22px rgba(15,23,42,.22); display:block; }
+  .install-words{ flex:1 1 320px; min-width:0; display:flex; flex-direction:column; gap:8px; }
+  .install-words h2{ margin:0; font-size:clamp(22px,3.4vw,30px); }
+  .install-words p{ margin:0; color:var(--ink-soft); }
+  .install-note{ font-size:14px !important; color:var(--ink-soft); }
+  .install-card .cta-row{ margin-top:8px; }
+  @media (max-width:640px){ .install-card{ padding:20px; gap:18px; justify-content:center; text-align:center; }
+    .install-card .cta-row{ justify-content:center; } }
 
   /* ---------- free trial ---------- */
   .trial{ display:grid; grid-template-columns:minmax(0,300px) minmax(0,1fr); gap:18px 36px; align-items:center; margin-bottom:34px; padding:22px 24px; background:var(--card); border:1px solid var(--card-line); border-radius:22px; box-shadow:var(--shadow); }
@@ -815,6 +830,27 @@
   </section>
 
   <!-- ================= CLOSING ================= -->
+  <section class="install ruled" id="getapp">
+    <div class="wrap">
+      <div class="install-card">
+        <div class="install-art" aria-hidden="true">
+          <img src="assets/icons/icon-192.png" alt="" width="84" height="84">
+        </div>
+        <div class="install-words">
+          <p class="eyebrow">On your phone</p>
+          <h2>Keep it on the home screen</h2>
+          <p>No app store, no download queue. It sits with their other apps, opens straight into
+             the day's routine, and keeps working when there's no signal.</p>
+          <p class="install-note" id="installNote">Works on iPhone and Android.</p>
+          <div class="cta-row">
+            <a class="btn" href="#" id="installBtn">Download the app</a>
+            <a class="btn ghost" href="#demo">Try the demo first</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section class="closing ruled">
     <div class="wrap">
       <p class="big-pen">Small steps, big futures.</p>
@@ -835,6 +871,7 @@
       <a href="#how">How it works</a>
       <a href="#demo">Demo</a>
       <a href="#plans">Plans</a>
+      <a href="#getapp">Get the app</a>
       <a href="#faq">FAQ</a>
     </nav>
   </div>
@@ -1342,6 +1379,50 @@
     a.addEventListener('click', e => { e.preventDefault(); startCheckout(plan); });
   });
   $$('[data-trial]').forEach(a => { const url = trialUrl(''); if (url) a.href = url; });
+
+  /* ---------- keeping it on a phone ----------
+     The manifest this page links to starts at the tracker, so installing from
+     here gives them the app itself, not a shortcut to the sales page. */
+  let deferredInstall = null;
+  const isIos = () => /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+                      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isInstalled = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+
+  function installNote() {
+    if (isInstalled()) return 'It is already on your home screen.';
+    if (deferredInstall) return 'One tap. It keeps working without a signal.';
+    if (isIos()) return 'On iPhone: tap Share in Safari, then "Add to Home Screen".';
+    return 'On Android: open your browser menu, then "Install app". On iPhone: Share, then "Add to Home Screen".';
+  }
+  function paintInstall() {
+    const note = $('#installNote'), btn = $('#installBtn');
+    if (note) note.textContent = installNote();
+    if (btn) btn.textContent = isInstalled() ? 'Open the app' : 'Download the app';
+  }
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; paintInstall(); });
+  window.addEventListener('appinstalled', () => { deferredInstall = null; paintInstall(); });
+
+  $('#installBtn').addEventListener('click', async e => {
+    e.preventDefault();
+    if (isInstalled()) { if (CONFIG.links.tracker) location.href = CONFIG.links.tracker; return; }
+    if (deferredInstall) {
+      deferredInstall.prompt();
+      await deferredInstall.userChoice.catch(() => null);
+      deferredInstall = null;
+      paintInstall();
+      return;
+    }
+    // no prompt to offer: say what to do on this phone, and don't leave them stuck
+    const note = $('#installNote');
+    if (note) { note.textContent = installNote(); note.style.fontWeight = '700'; }
+    if (CONFIG.links.tracker) window.open(CONFIG.links.tracker, '_blank', 'noopener');
+  });
+  paintInstall();
+
+  /* the app shell is cached so the tracker opens instantly from the home screen */
+  if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+    window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+  }
 
   /* ---------- the demo account lives in the tracker itself ---------- */
   if (CONFIG.links.tracker) {
