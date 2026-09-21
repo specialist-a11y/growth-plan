@@ -355,6 +355,19 @@
   .status-cycle small{ color:#969cab; }
   .status-cycle.saving i{ background:#f5b93b; box-shadow:0 0 0 4px rgba(245,185,59,.2); }
 
+  /* ---------- the "how do I install this" dialog ---------- */
+  .ix-backdrop{ position:fixed; inset:0; z-index:90; display:flex; align-items:center; justify-content:center;
+    padding:20px; background:rgba(12,18,28,.55); backdrop-filter:blur(3px); }
+  .ix-card{ position:relative; width:min(480px,100%); max-height:86vh; overflow:auto; padding:26px 26px 22px;
+    background:var(--paper); border:1px solid var(--card-line); border-radius:22px; box-shadow:0 26px 60px rgba(8,15,30,.35); }
+  .ix-card h3{ margin:0 0 8px; font-family:var(--display); font-size:22px; }
+  .ix-lead{ margin:0 0 14px; color:var(--ink-soft); }
+  .ix-steps{ margin:0; padding-left:22px; display:flex; flex-direction:column; gap:9px; }
+  .ix-steps li{ color:var(--ink); }
+  .ix-steps b{ background:var(--hl); padding:1px 5px; border-radius:5px; }
+  .ix-foot{ margin:16px 0 0; font-size:14px; color:var(--ink-soft); }
+  .ix-close{ position:absolute; top:10px; right:12px; border:0; background:none; font-size:20px; line-height:1;
+    cursor:pointer; color:var(--ink-soft); padding:6px; }
   /* ---------- keeping it on a phone ---------- */
   .install-card{ display:flex; align-items:center; gap:26px; flex-wrap:wrap; padding:26px 28px;
     background:var(--card); border:1px solid var(--card-line); border-radius:24px; box-shadow:var(--shadow); }
@@ -871,6 +884,16 @@
       </div>
     </div>
   </section>
+
+  <div class="ix-backdrop" id="installHelp" hidden>
+    <div class="ix-card" role="dialog" aria-modal="true" aria-labelledby="ixTitle">
+      <button class="ix-close" onclick="closeInstallHelp()" aria-label="Close">✕</button>
+      <h3 id="ixTitle">Add it to your home screen</h3>
+      <p class="ix-lead" id="ixLead"></p>
+      <ol class="ix-steps" id="ixSteps"></ol>
+      <p class="ix-foot" id="ixFoot"></p>
+    </div>
+  </div>
 
   <section class="closing ruled">
     <div class="wrap">
@@ -1423,9 +1446,60 @@
   window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; paintInstall(); });
   window.addEventListener('appinstalled', () => { deferredInstall = null; paintInstall(); });
 
+  /* Pressing the button must always show something. Browsers only offer a
+     one-tap install in narrow circumstances, so when there is no offer to
+     take, say plainly why and what to do instead. */
+  function installAdvice() {
+    const androidish = /android/i.test(navigator.userAgent);
+    if (isInstalled()) return { title: 'It is already installed', lead: 'This is on your home screen already — open it from there.', steps: [], foot: '' };
+    if (location.protocol === 'file:') return {
+      title: 'Open it from the web first',
+      lead: 'This page is open from a file on this computer, and a phone can only keep a page that comes from a web address.',
+      steps: ['Put the tracker online (any https address will do).', 'Open that address on the phone.', 'Then this button will add it in one tap.'],
+      foot: 'Everything else on this page works from a file — only installing needs a real address.' };
+    if (!window.isSecureContext) return {
+      title: 'Needs a secure address',
+      lead: 'Browsers only install pages served over https. This one is on ' + location.protocol + '//',
+      steps: ['Open the same page on its https address.', 'Press this button again.'],
+      foot: '' };
+    if (isIos()) return {
+      title: 'Add it on your iPhone',
+      lead: 'Apple does not let a page install itself, so it takes three taps in Safari.',
+      steps: ['Open this page in <b>Safari</b> (not Chrome — Apple only allows it there).',
+              'Tap <b>Share</b> — the square with an arrow coming out of it.',
+              'Scroll down and tap <b>Add to Home Screen</b>, then <b>Add</b>.'],
+      foot: 'It then has its own icon and opens full screen, with no browser bar.' };
+    if (androidish) return {
+      title: 'Add it on your phone',
+      lead: 'Your browser has not offered the one-tap install yet, but you can still add it by hand.',
+      steps: ['Open the browser menu — the <b>⋮</b> in the corner.',
+              'Tap <b>Install app</b>, or <b>Add to Home screen</b>.', 'Confirm, and it appears with your other apps.'],
+      foot: 'If you are in a browser other than Chrome, try Chrome — not all of them can install.' };
+    return {
+      title: 'Add it from this browser',
+      lead: 'This is usually done on a phone, but a computer can keep it too.',
+      steps: ['In Chrome or Edge, look for the install icon at the right of the address bar.',
+              'Or open the <b>⋮</b> menu and choose <b>Install</b>.',
+              'On a phone, open this page there and press this button again.'],
+      foot: 'Safari and Firefox on a computer cannot install web apps.' };
+  }
+  function openInstallHelp() {
+    const a = installAdvice();
+    $('#ixTitle').textContent = a.title;
+    $('#ixLead').textContent = a.lead;
+    $('#ixSteps').innerHTML = a.steps.map(t => `<li>${t}</li>`).join('');
+    $('#ixSteps').hidden = !a.steps.length;
+    $('#ixFoot').textContent = a.foot;
+    $('#installHelp').hidden = false;
+  }
+  function closeInstallHelp() { $('#installHelp').hidden = true; }
+  window.closeInstallHelp = closeInstallHelp;
+  $('#installHelp').addEventListener('click', e => { if (e.target.id === 'installHelp') closeInstallHelp(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeInstallHelp(); });
+
   $('#installBtn').addEventListener('click', async e => {
     e.preventDefault();
-    if (isInstalled()) { if (CONFIG.links.tracker) location.href = CONFIG.links.tracker; return; }
+    if (isInstalled() && CONFIG.links.tracker) { location.href = CONFIG.links.tracker; return; }
     if (deferredInstall) {
       deferredInstall.prompt();
       await deferredInstall.userChoice.catch(() => null);
@@ -1433,10 +1507,7 @@
       paintInstall();
       return;
     }
-    // no prompt to offer: say what to do on this phone, and don't leave them stuck
-    const note = $('#installNote');
-    if (note) { note.textContent = installNote(); note.style.fontWeight = '700'; }
-    if (CONFIG.links.tracker) window.open(CONFIG.links.tracker, '_blank', 'noopener');
+    openInstallHelp();          // always something, never a dead button
   });
   paintInstall();
 

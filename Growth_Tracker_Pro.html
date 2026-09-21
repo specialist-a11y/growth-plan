@@ -3818,6 +3818,19 @@ body.demo-on #appSidebar{ top:var(--demo-bar-h,46px) !important; height:calc(100
 .tt-preview b{ display:block; margin-bottom:5px; font-size:12px; color:var(--accent); }
 .tt-preview .meta{ font-size:11.5px; }
 @media (max-width:760px){ .tt-preview{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
+/* what to do when the browser will not install it for us */
+.ix-backdrop{ position:fixed; inset:0; z-index:90; display:flex; align-items:center; justify-content:center;
+  padding:20px; background:rgba(0,0,0,.6); }
+.ix-card{ position:relative; width:min(460px,100%); max-height:86vh; overflow:auto; padding:24px 24px 20px;
+  background:var(--t-panel,#14141a); border:1px solid var(--t-line,#26262e); border-radius:20px;
+  box-shadow:0 26px 60px rgba(0,0,0,.6); color:var(--t-text,#f2f2f5); }
+.ix-card h3{ margin:0 0 8px; font-size:19px; }
+.ix-lead{ margin:0 0 14px; color:var(--t-muted,#8d8d99); font-size:13.5px; }
+.ix-steps{ margin:0; padding-left:20px; display:flex; flex-direction:column; gap:9px; font-size:13.5px; }
+.ix-steps b{ color:#fff; }
+.ix-foot{ margin:15px 0 0; font-size:12.5px; }
+.ix-close{ position:absolute; top:8px; right:10px; border:0; background:none; color:var(--t-muted,#8d8d99);
+  font-size:19px; line-height:1; padding:6px; cursor:pointer; }
 /* the "add to your phone" invitation */
 .install-bar{ position:fixed; left:50%; transform:translateX(-50%); bottom:18px; z-index:79;
   display:flex; align-items:center; gap:12px; flex-wrap:wrap; max-width:min(560px,94vw);
@@ -4169,6 +4182,16 @@ body.theme-sportscar .hero::after {
 </div>
 
 <div id="milestonePop" class="ms-pop" hidden></div>
+
+<div class="ix-backdrop" id="installHelp" hidden>
+  <div class="ix-card" role="dialog" aria-modal="true" aria-labelledby="ixTitle">
+    <button class="ix-close" onclick="closeInstallHelp()" aria-label="Close">✕</button>
+    <h3 id="ixTitle"></h3>
+    <p class="ix-lead" id="ixLead"></p>
+    <ol class="ix-steps" id="ixSteps"></ol>
+    <p class="ix-foot meta" id="ixFoot"></p>
+  </div>
+</div>
 
 <!-- Adding the tracker to a phone's home screen, without any app store -->
 <div id="installBar" class="install-bar" hidden>
@@ -11114,19 +11137,61 @@ function showInstallBar(force) {
   bar.hidden = false;
 }
 
-/* The "Download as app" entry in the menus: always does something useful,
-   whatever the phone is willing to do. */
+/* The "Download as app" entry in the menus. A browser only offers a one-tap
+   install in narrow circumstances, so when there is no offer to take, say
+   plainly why and what to do instead — never nothing. */
+function installAdvice() {
+  if (isStandalone()) return { title: 'Already on your home screen',
+    lead: 'This is installed — open it from the icon like any other app.', steps: [], foot: '' };
+  if (location.protocol === 'file:') return {
+    title: 'Open it from the web first',
+    lead: 'This page is open from a file on this device, and a phone can only keep a page that comes from a web address.',
+    steps: ['Put the tracker online at an https address.', 'Open that address on the phone.',
+            'Then this button adds it in one tap.'],
+    foot: 'Everything else works from a file — only installing needs a real address.' };
+  if (!window.isSecureContext) return {
+    title: 'Needs a secure address',
+    lead: 'Browsers only install pages served over https.',
+    steps: ['Open the same page on its https address.', 'Press this again.'], foot: '' };
+  if (isIos()) return {
+    title: 'Add it on your iPhone',
+    lead: 'Apple does not let a page install itself, so it takes three taps in Safari.',
+    steps: ['Open this in <b>Safari</b> — Apple only allows it there.',
+            'Tap <b>Share</b>, the square with an arrow coming out of it.',
+            'Scroll down, tap <b>Add to Home Screen</b>, then <b>Add</b>.'],
+    foot: 'It then has its own icon and opens full screen.' };
+  if (/android/i.test(navigator.userAgent)) return {
+    title: 'Add it on your phone',
+    lead: 'Your browser has not offered the one-tap install yet, but you can add it by hand.',
+    steps: ['Open the browser menu — the <b>⋮</b> in the corner.',
+            'Tap <b>Install app</b> or <b>Add to Home screen</b>.', 'Confirm, and it joins your other apps.'],
+    foot: 'Not every Android browser can install; Chrome always can.' };
+  return {
+    title: 'Add it from this browser',
+    lead: 'This is usually done on a phone, but a computer can keep it too.',
+    steps: ['In Chrome or Edge, look for the install icon at the right of the address bar.',
+            'Or open <b>⋮</b> and choose <b>Install</b>.',
+            'On a phone, open this page there and press this again.'],
+    foot: 'Safari and Firefox on a computer cannot install web apps.' };
+}
+function openInstallHelp() {
+  const a = installAdvice();
+  const set = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+  set('ixTitle', a.title);
+  set('ixLead', a.lead);
+  const steps = document.getElementById('ixSteps');
+  if (steps) { steps.innerHTML = a.steps.map(t => `<li>${t}</li>`).join(''); steps.hidden = !a.steps.length; }
+  set('ixFoot', a.foot);
+  const box = document.getElementById('installHelp');
+  if (box) box.hidden = false;
+}
+function closeInstallHelp() {
+  const box = document.getElementById('installHelp');
+  if (box) box.hidden = true;
+}
 function installApp() {
-  if (isStandalone()) {
-    // an undeclared name would throw, so check the safe way
-    if (typeof toast === 'function') toast('🗂️ It is already on your home screen.');
-    else alert('1GAMMA MB is already on your home screen.');
-    return;
-  }
-  if (deferredInstall) return doInstall();
-  showInstallBar(true);
-  const bar = document.getElementById('installBar');
-  if (bar) bar.scrollIntoView({ block: 'nearest' });
+  if (!isStandalone() && deferredInstall) return doInstall();
+  openInstallHelp();
 }
 
 /* Once it is installed there is nothing to offer, so stop offering it. */
@@ -11151,7 +11216,9 @@ window.addEventListener('beforeinstallprompt', e => {
   deferredInstall = e;
   showInstallBar();
 });
-window.addEventListener('appinstalled', () => { dismissInstall(); deferredInstall = null; refreshInstallEntries(); });
+window.addEventListener('appinstalled', () => { dismissInstall(); deferredInstall = null; refreshInstallEntries(); closeInstallHelp(); });
+document.addEventListener('click', e => { if (e.target && e.target.id === 'installHelp') closeInstallHelp(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeInstallHelp(); });
 
 /* Offline support, so a morning routine can be ticked off on the bus. */
 if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
