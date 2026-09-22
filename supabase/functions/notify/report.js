@@ -94,6 +94,7 @@ export function weeklyReport(rows, settings, today) {
   let counted = 0, sum = 0, perfect = 0, ticks = 0;
   let hwDone = 0, hwLate = 0, hwMissed = 0;
   const hasHomework = !!(tasks || []).find(t => t.id === 'homework');
+  const deadlinesOn = !!(settings.deadlines && settings.deadlines.enabled);
 
   days.forEach(({ date, rec }) => {
     // a day with no record is a day nobody opened, not a day that went badly:
@@ -104,7 +105,8 @@ export function weeklyReport(rows, settings, today) {
     ticks += Object.values((rec && rec.tasks) || {}).filter(Boolean).length;
     if (hasHomework && isSchoolDay(date)) {
       const done = !!(rec && rec.tasks && rec.tasks.homework);
-      const late = !!(rec && rec.late && rec.late.homework);
+      // the same rule the app scores by: no deadlines in force, nothing is late
+      const late = deadlinesOn && !!(rec && rec.late && rec.late.homework);
       const excused = !!(rec && rec.excused);
       if (done && (!late || excused)) hwDone++;
       else if (done) hwLate++;

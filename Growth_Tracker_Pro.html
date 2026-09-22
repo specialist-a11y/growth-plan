@@ -3844,6 +3844,41 @@ body.demo-on #appSidebar{ top:var(--demo-bar-h,46px) !important; height:calc(100
   .install-bar{ bottom:calc(74px + env(safe-area-inset-bottom,0px)); gap:8px; }
   .install-bar .action{ flex:1 1 auto; }
 }
+/* the month grid: a calendar, not a stack of cards */
+.calendar .day.cal-day{ min-height:0 !important; height:92px !important; padding:8px 9px !important;
+  border-radius:14px !important; display:flex !important; flex-direction:column !important;
+  justify-content:space-between !important; gap:6px; overflow:hidden; }
+.cal-day .cal-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:4px; }
+.cal-day .num{ font-size:19px !important; font-weight:800 !important; line-height:1; }
+.cal-day .cal-flags{ display:flex; gap:2px; font-size:12px; line-height:1; flex-wrap:wrap; justify-content:flex-end; }
+.cal-day .cal-note{ font-size:9.5px; font-weight:700; color:var(--accent); line-height:1.2;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cal-day .cal-foot{ display:flex; align-items:center; gap:7px; }
+.cal-day .cal-bar{ flex:1; height:5px; border-radius:99px; background:rgba(255,255,255,.10); overflow:hidden; }
+.cal-day .cal-bar i{ display:block; height:100%; border-radius:99px; background:var(--accent); }
+.cal-day .cal-pct{ font-size:10.5px; font-weight:700; color:var(--t-muted,#8d8d99); font-variant-numeric:tabular-nums; }
+.cal-day.is-weekend{ background:rgba(255,255,255,.03) !important; }
+.cal-day.is-today{ box-shadow:inset 0 0 0 2px var(--accent) !important; }
+.cal-day.is-perfect .cal-bar i{ background:#ffc73c; }
+.calendar .dow{ font-size:11px; font-weight:800; letter-spacing:.08em; padding-bottom:4px; }
+/* the blanks before the 1st kept the old tall-card height and broke the grid */
+.calendar .day.empty{ height:92px !important; min-height:0 !important; padding:0 !important; }
+@media (max-width:760px){
+  /* a phone can hold a whole month now that a day is a square, not a card:
+     the old rules stacked it into one column, which read as a list */
+  .calendar{ grid-template-columns:repeat(7,1fr) !important; gap:5px !important; }
+  .calendar .dow{ display:block !important; font-size:9px; letter-spacing:.02em; text-align:center; padding-bottom:2px; }
+  .calendar .day.cal-day{ height:58px !important; padding:5px 4px !important; border-radius:10px !important; gap:3px; }
+  .cal-day .num{ font-size:14px !important; }
+  .cal-day .cal-flags{ font-size:9px; }
+  .cal-day .cal-flags span:nth-child(n+3){ display:none; }   /* two marks is all that fits */
+  .cal-day .cal-pct{ display:none; }
+  .cal-day .cal-bar{ height:4px; }
+  .cal-day .cal-note{ display:none; }        /* no room for it beside the date on a phone */
+  /* an older mobile rule hid the blanks before the 1st, which shunted every
+     date one column left — the 22nd landed under Monday */
+  .calendar .day.empty{ display:block !important; height:58px !important; }
+}
 /* which emails a parent wants */
 .em-box{ border:1px solid var(--t-line,#26262e); border-radius:14px; padding:6px 14px 12px; background:var(--t-panel-2,#1b1b21); }
 .em-row{ display:grid; grid-template-columns:22px minmax(0,1fr); gap:11px; align-items:start; padding:12px 0;
@@ -7346,32 +7381,34 @@ function renderCalendar() {
     let weekendTidyDone = dayObj.tidy?.floor && dayObj.tidy?.desk && dayObj.tidy?.bed && dayObj.tidy?.sweepMop;
     let weekendLaundryDone = dayObj.tasks['wash_blacks'] && dayObj.tasks['wash_whites'] && dayObj.tasks['wash_pants'] && dayObj.tasks['wash_socks'];
 
+    // A month has to read as a month at a glance: the date leads, everything
+    // else is a small mark, and the detail waits behind a tap.
+    const flags = [];
+    if (isHair) flags.push('<span title="Wash hair day">💇</span>');
+    if (isWeekend) flags.push('<span title="Weekend deep clean">🧹</span>');
+    if (dayState.holiday || (!isWeekend && !dayState.school)) flags.push('<span title="' + escapeHTML(dayState.holiday || 'No school') + '">🎉</span>');
+    if (daySched && dayState.school) flags.push('<span title="School day">🏫</span>');
+
+    const detail = isWeekend
+      ? `Room tidy: ${weekendTidyDone ? 'done' : 'pending'} · Laundry: ${weekendLaundryDone ? 'done' : 'pending'}`
+      : !dayState.school ? (dayState.holiday || 'No school')
+      : `Homework: ${dayObj.tasks['homework'] ? 'done' : 'pending'} · Containers: ${dayObj.tasks['wash_containers'] ? 'done' : 'pending'}`;
+    const today = isTodayDay(day);
+    // a holiday is worth naming: a parent plans around it, and an emoji alone
+    // does not say which holiday it is
+    const holidayName = dayState.holiday || (!isWeekend && !dayState.school ? 'No school' : '');
+
     el.insertAdjacentHTML('beforeend', `
-      <div class="day" onclick="openDay(${day})">
-        <div>
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div class="num">${day}</div>
-            <div style="font-size:12px">${ratingStars}</div>
-          </div>
-          ${isHair ? '<span class="badge-tag badge-hair">💇‍♀️ Wash Hair Day</span>' : ''}
-          ${daySched && dayState.school ? '<span class="badge-tag" style="background:#e0f2fe; color:#0369a1;">🏫 ' + escapeHTML(schoolTimetable.className || 'School') + ': ' + daySched.dayName + '</span>' : ''}
-          ${dayState.holiday || (!isWeekend && !dayState.school) ? '<span class="badge-tag badge-holiday">🎉 ' + escapeHTML(dayState.holiday || dayState.label) + '</span>' : ''}
-          ${isWeekend ? '<span class="badge-tag" style="background:#fef3c7; color:#92400e;">🗓️ Weekend Deep Clean</span>' : ''}
-          <div class="meta" style="margin-top:6px;">
-            ${isWeekend ? `
-              <b>Room Tidy:</b> ${weekendTidyDone ? '✅ Spotless' : '⏳ Pending'}<br>
-              <b>Laundry:</b> ${weekendLaundryDone ? '✅ Sorted' : '⏳ Pending'}
-            ` : !dayState.school ? `
-              <b>No school today</b> — enjoy the day off! 🎉
-            ` : `
-              <b>Homework:</b> ${dayObj.tasks['homework'] ? '✅ Done' : '⏳ Pending'}<br>
-              <b>Containers:</b> ${dayObj.tasks['wash_containers'] ? '✅ Clean' : '⏳ Pending'}
-            `}
-          </div>
+      <div class="day cal-day${today ? ' is-today' : ''}${isWeekend ? ' is-weekend' : ''}${pct === 100 ? ' is-perfect' : ''}"
+           onclick="openDay(${day})" title="${escapeHTML(isoDate(day) + ' — ' + pct + '% complete. ' + detail)}">
+        <div class="cal-top">
+          <span class="num">${day}</span>
+          <span class="cal-flags">${flags.slice(0, 3).join('')}${ratingStars ? '<span title="Rated">' + ratingStars.slice(0, 2) + '</span>' : ''}</span>
         </div>
-        <div>
-          <div class="progress"><div class="bar" style="width:${pct}%"></div></div>
-          <div class="meta" style="margin-top:4px; font-weight:700">${pct}% complete</div>
+        ${holidayName ? `<span class="cal-note">${escapeHTML(holidayName)}</span>` : ''}
+        <div class="cal-foot">
+          <span class="cal-bar" aria-hidden="true"><i style="width:${pct}%"></i></span>
+          <span class="cal-pct">${pct}%</span>
         </div>
       </div>
     `);
@@ -7656,7 +7693,10 @@ function recordTick(day, key, val) {
   // a tick can be the one that earns a milestone, so look straight away
   if (val && typeof checkMilestones === 'function') setTimeout(() => checkMilestones(), 0);
 }
-function tickCounts(d, key) { return !!d.excused || !(d.late && d.late[key]); }
+/* A tick counts unless a deadline caught it. Switching deadlines off lifts the
+   penalty as well as the rule: the flags stay on the record, but a family that
+   has stopped using deadlines should not still be paying for last week's. */
+function tickCounts(d, key) { return !deadlinesOn() || !!d.excused || !(d.late && d.late[key]); }
 
 async function unlockDayEdit(day, btn) {
   const box = btn.closest('.dl-banner');
