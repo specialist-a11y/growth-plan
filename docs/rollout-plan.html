@@ -1,0 +1,443 @@
+<title>Unprompted Rollout</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Gochi+Hand&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --paper:#F2F5F9; --paper-2:#E8EEF5; --card:#FFFFFF; --rule:#D6E0EB; --rule-soft:#E4EBF3;
+    --margin:#DD3F45; --pen:#2743C9; --ink:#13161D; --ink-soft:#4E5A6E; --ink-faint:#7C89A0;
+    --done:#1E874B; --waiting:#B4700A; --blocked:#C0362C;
+    --done-bg:#E4F3EA; --waiting-bg:#FBF0DC; --blocked-bg:#FBE6E4;
+    --shadow:0 1px 2px rgba(19,22,29,.05), 0 8px 24px rgba(19,22,29,.06);
+    --display:"Bricolage Grotesque",system-ui,sans-serif;
+    --body:"Atkinson Hyperlegible",system-ui,-apple-system,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,monospace;
+    --hand:"Gochi Hand",cursive;
+  }
+  :root:not([data-theme="light"]){ }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#111721; --paper-2:#161D28; --card:#1A2230; --rule:#2A3545; --rule-soft:#222C3A;
+      --margin:#E4565B; --pen:#7B93FF; --ink:#EEF2F8; --ink-soft:#A7B4C7; --ink-faint:#7A879B;
+      --done:#4CC585; --waiting:#E0A73C; --blocked:#F0736A;
+      --done-bg:#16281F; --waiting-bg:#2A2214; --blocked-bg:#2B1A19;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#111721; --paper-2:#161D28; --card:#1A2230; --rule:#2A3545; --rule-soft:#222C3A;
+    --margin:#E4565B; --pen:#7B93FF; --ink:#EEF2F8; --ink-soft:#A7B4C7; --ink-faint:#7A879B;
+    --done:#4CC585; --waiting:#E0A73C; --blocked:#F0736A;
+    --done-bg:#16281F; --waiting-bg:#2A2214; --blocked-bg:#2B1A19;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px rgba(0,0,0,.35);
+  }
+
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:var(--body); font-size:16px; line-height:1.62;
+    -webkit-font-smoothing:antialiased;
+  }
+  .sheet{ max-width:980px; margin:0 auto; padding:0 16px 72px; }
+
+  /* ---------- masthead ---------- */
+  header.top{ padding-block:38px 26px; border-bottom:2px solid var(--rule); }
+  .eyebrow{
+    font-family:var(--mono); font-size:11.5px; font-weight:600; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--ink-faint); margin:0 0 10px;
+  }
+  h1{
+    font-family:var(--display); font-weight:800; font-size:clamp(30px,5.4vw,46px);
+    line-height:1.06; letter-spacing:-.02em; margin:0 0 12px; text-wrap:balance;
+  }
+  .standfirst{ margin:0; max-width:62ch; color:var(--ink-soft); font-size:17px; }
+  .standfirst b{ color:var(--ink); }
+
+  .meter{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-top:22px; }
+  .meter-track{ flex:1 1 220px; height:9px; border-radius:99px; background:var(--rule-soft); overflow:hidden; }
+  .meter-fill{ height:100%; width:0%; background:var(--pen); border-radius:99px; transition:width .35s ease; }
+  .meter-count{ font-family:var(--mono); font-size:13px; font-weight:600; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
+  .meter button{
+    font:inherit; font-size:13px; border:1px solid var(--rule); background:var(--card); color:var(--ink-soft);
+    border-radius:99px; padding:5px 13px; cursor:pointer;
+  }
+  .meter button:hover{ border-color:var(--pen); color:var(--pen); }
+
+  /* ---------- the standing decision box ---------- */
+  .decide{
+    margin-top:26px; padding:20px 22px; background:var(--card); border:1px solid var(--rule);
+    border-left:4px solid var(--margin); border-radius:4px; box-shadow:var(--shadow);
+  }
+  .decide h2{ font-family:var(--display); font-size:19px; margin:0 0 6px; font-weight:700; }
+  .decide p{ margin:0 0 12px; color:var(--ink-soft); font-size:15px; }
+  .decide ol{ margin:0; padding-left:20px; display:flex; flex-direction:column; gap:7px; font-size:15px; }
+  .decide li b{ color:var(--ink); }
+
+  /* ---------- phases, ruled like a school planner ---------- */
+  .phase{
+    display:grid; grid-template-columns:78px minmax(0,1fr); gap:0;
+    border-bottom:1px solid var(--rule-soft);
+  }
+  .phase:last-of-type{ border-bottom:0; }
+  .weeks{
+    border-right:2px solid var(--margin); padding:34px 16px 34px 0; text-align:right;
+  }
+  .weeks .wk{
+    font-family:var(--mono); font-size:12px; font-weight:600; color:var(--margin);
+    letter-spacing:.04em; font-variant-numeric:tabular-nums; display:block;
+  }
+  .weeks .wk-sub{ font-family:var(--mono); font-size:10.5px; color:var(--ink-faint); display:block; margin-top:4px; }
+  .phase-body{ padding:34px 0 34px 26px; min-width:0; }
+  .phase h2{
+    font-family:var(--display); font-weight:800; font-size:clamp(21px,3vw,27px);
+    margin:0 0 8px; letter-spacing:-.01em; text-wrap:balance;
+  }
+  .phase .aim{ margin:0 0 18px; color:var(--ink-soft); max-width:62ch; }
+
+  .gate{
+    display:flex; gap:10px; align-items:flex-start; padding:12px 15px; margin:0 0 20px;
+    background:var(--blocked-bg); border-radius:4px; font-size:14.5px; color:var(--ink);
+  }
+  .gate.soft{ background:var(--waiting-bg); }
+  .gate .gate-k{
+    font-family:var(--mono); font-size:10.5px; font-weight:600; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--blocked); white-space:nowrap; padding-top:3px;
+  }
+  .gate.soft .gate-k{ color:var(--waiting); }
+
+  /* ---------- task lists ---------- */
+  .tasks{ list-style:none; margin:0 0 4px; padding:0; display:flex; flex-direction:column; gap:2px; }
+  .tasks li{ border-bottom:1px solid var(--rule-soft); }
+  .tasks li:last-child{ border-bottom:0; }
+  .tasks label{
+    display:grid; grid-template-columns:22px minmax(0,1fr); gap:12px; align-items:start;
+    padding:11px 4px; cursor:pointer;
+  }
+  .tasks input{
+    appearance:none; width:19px; height:19px; margin:3px 0 0; border:2px solid var(--ink-faint);
+    border-radius:4px; background:transparent; cursor:pointer; position:relative; flex:none;
+  }
+  .tasks input:checked{ background:var(--done); border-color:var(--done); }
+  .tasks input:checked::after{
+    content:""; position:absolute; left:5px; top:1px; width:5px; height:10px;
+    border:solid #fff; border-width:0 2.5px 2.5px 0; transform:rotate(43deg);
+  }
+  .tasks input:focus-visible{ outline:2px solid var(--pen); outline-offset:2px; }
+  .tasks .t-main{ font-size:15.5px; }
+  .tasks input:checked ~ .t-wrap .t-main{ color:var(--ink-faint); text-decoration:line-through; }
+  .tasks .t-note{ display:block; font-size:13.5px; color:var(--ink-soft); margin-top:2px; }
+  .tasks code{ font-family:var(--mono); font-size:12.5px; background:var(--paper-2); padding:1px 5px; border-radius:3px; }
+
+  .tag{
+    display:inline-block; font-family:var(--mono); font-size:10px; font-weight:600; letter-spacing:.09em;
+    text-transform:uppercase; padding:2px 7px; border-radius:3px; margin-left:8px; vertical-align:2px;
+  }
+  .tag.block{ background:var(--blocked-bg); color:var(--blocked); }
+  .tag.slow{ background:var(--waiting-bg); color:var(--waiting); }
+  .tag.done{ background:var(--done-bg); color:var(--done); }
+
+  /* ---------- survey cards ---------- */
+  .surveys{ display:grid; grid-template-columns:repeat(auto-fit,minmax(290px,1fr)); gap:18px; margin:6px 0 4px; }
+  .survey{ background:var(--card); border:1px solid var(--rule); border-radius:4px; padding:18px 20px; box-shadow:var(--shadow); }
+  .survey h3{
+    font-family:var(--display); font-size:17px; margin:0 0 3px; font-weight:700;
+  }
+  .survey .when{ font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint); margin:0 0 12px; }
+  .survey ol{ margin:0; padding-left:19px; display:flex; flex-direction:column; gap:9px; font-size:14.5px; }
+  .survey li span{ display:block; color:var(--ink-soft); font-size:13px; margin-top:1px; }
+
+  .handnote{
+    font-family:var(--hand); font-size:19px; color:var(--pen); line-height:1.35;
+    margin:16px 0 0; transform:rotate(-.6deg); max-width:46ch;
+  }
+
+  /* ---------- risks ---------- */
+  .risks{ border-top:2px solid var(--rule); margin-top:8px; padding-top:30px; }
+  .risks h2{ font-family:var(--display); font-size:24px; margin:0 0 4px; font-weight:800; }
+  .risks > p{ margin:0 0 18px; color:var(--ink-soft); max-width:62ch; }
+  .risk-list{ display:flex; flex-direction:column; gap:0; }
+  .risk{
+    display:grid; grid-template-columns:110px minmax(0,1fr); gap:16px; align-items:start;
+    padding:14px 0; border-top:1px solid var(--rule-soft);
+  }
+  .risk:first-child{ border-top:0; }
+  .risk .sev{
+    font-family:var(--mono); font-size:10.5px; font-weight:600; letter-spacing:.09em; text-transform:uppercase;
+    padding:3px 8px; border-radius:3px; text-align:center;
+  }
+  .sev.high{ background:var(--blocked-bg); color:var(--blocked); }
+  .sev.med{ background:var(--waiting-bg); color:var(--waiting); }
+  .risk b{ display:block; font-size:15px; margin-bottom:2px; }
+  .risk p{ margin:0; font-size:14px; color:var(--ink-soft); }
+
+  footer.end{
+    margin-top:34px; padding-top:20px; border-top:1px solid var(--rule);
+    font-size:13.5px; color:var(--ink-faint); display:flex; justify-content:space-between; gap:14px; flex-wrap:wrap;
+  }
+  footer.end span{ font-family:var(--mono); font-size:12px; }
+
+  @media (max-width:640px){
+    .phase{ grid-template-columns:1fr; }
+    .weeks{
+      border-right:0; border-left:3px solid var(--margin); text-align:left;
+      padding:26px 0 0 12px;
+    }
+    .weeks .wk-sub{ display:inline; margin-left:8px; }
+    .phase-body{ padding:10px 0 30px 12px; border-left:3px solid var(--rule-soft); }
+    .risk{ grid-template-columns:1fr; gap:6px; }
+    .risk .sev{ justify-self:start; }
+  }
+  @media (prefers-reduced-motion:reduce){ .meter-fill{ transition:none; } }
+</style>
+
+<div class="sheet">
+  <header class="top">
+    <p class="eyebrow">Unprompted · by MVB · rollout plan · drafted 21 Sep 2026</p>
+    <h1>From built to paid, in eight weeks</h1>
+    <p class="standfirst">The app is finished enough to put in front of real families. What stands between here and taking money is
+      <b>hosting, row-level security, a survey that asks the right things, and Paddle's verification queue</b> — which is the
+      slowest item and the one to start first. Work down the page; nothing in a phase should start before its gate is clear.</p>
+    <div class="meter">
+      <span class="meter-count" id="count">0 of 0 done</span>
+      <div class="meter-track"><div class="meter-fill" id="fill"></div></div>
+      <button type="button" id="reset">Clear ticks</button>
+    </div>
+  </header>
+
+  <section class="decide">
+    <h2>Four things to decide before week 1</h2>
+    <p>Each one changes what gets built, so settle them on paper first.</p>
+    <ol>
+      <li><b>Trial with or without a card.</b> Recommendation: <b>without</b>. A family product lives or dies on the first evening; asking for a card before they've seen a single streak will cost more sign-ups than it saves you in chasing. It means the trial lives in your own database rather than Paddle's.</li>
+      <li><b>Whether to sell Pro at launch.</b> The site promises weekly email reports, reward-waiting emails and a second parent login. None of that is built. Either build it or take Pro off the page until it exists.</li>
+      <li><b>Which prices to test.</b> The site currently shows $3.99 and $6.99 a month. Treat those as a hypothesis the day‑14 survey either confirms or replaces.</li>
+      <li><b>Who the eight families are.</b> Name them now. Recruiting during the pilot is how pilots drift for a month.</li>
+    </ol>
+    <p style="margin:14px 0 0; font-size:14px; color:var(--ink-soft);"><b style="color:var(--ink);">Settled 21 Sep:</b>
+      the product is <b style="color:var(--ink);">Unprompted</b>, published by MVB, and MVB is the highest mark a child can earn in the app.</p>
+  </section>
+
+  <section class="phase">
+    <div class="weeks"><span class="wk">Week 1</span><span class="wk-sub">gate</span></div>
+    <div class="phase-body">
+      <h2>Before another family's data exists</h2>
+      <p class="aim">Everything here is a safety or plumbing job. None of it is visible to a parent, and all of it is
+        much harder to fix once other people's children are in the database.</p>
+      <div class="gate"><span class="gate-k">Hard stop</span>
+        <span>No invitations go out until row-level security is on and verified. The publishable Supabase key ships inside the
+          page and sits in a GitHub repo — RLS is the only thing separating one family's data from another's.</span></div>
+      <ul class="tasks">
+        <li><label><input type="checkbox" id="g1"><span class="t-wrap"><span class="t-main">Turn on RLS for <code>profiles</code> and <code>growth_months</code><span class="tag block">blocking</span></span>
+          <span class="t-note">Policy: a row is readable and writable only by the user whose <code>user_id</code> matches. Everything else denied by default.</span></span></label></li>
+        <li><label><input type="checkbox" id="g2"><span class="t-wrap"><span class="t-main">Prove it with two accounts</span>
+          <span class="t-note">Sign in as parent A, query parent B's month row, expect zero rows — not an error, zero rows. Write it down; this is the test you repeat after every schema change.</span></span></label></li>
+        <li><label><input type="checkbox" id="g3"><span class="t-wrap"><span class="t-main">Put the site on an https address<span class="tag block">blocking</span></span>
+          <span class="t-note">Static hosting is enough — the whole product is files. This one step switches on the trial links, "Download as app", the service worker and offline use, all of which currently explain themselves instead of working.</span></span></label></li>
+        <li><label><input type="checkbox" id="g4"><span class="t-wrap"><span class="t-main">Set <code>links.tracker</code> in index.html to the live address</span>
+          <span class="t-note">Then walk the live site: demo opens, "Start 15-day free trial" lands on the sign-up form, install works on one Android and one iPhone.</span></span></label></li>
+        <li><label><input type="checkbox" id="g5"><span class="t-wrap"><span class="t-main">Confirm Supabase backups are on, and keep a copy of the repo off your Mac</span>
+          <span class="t-note">Eight families' routines is not much data, but it is data you cannot recreate.</span></span></label></li>
+        <li><label><input type="checkbox" id="g6"><span class="t-wrap"><span class="t-main">Write Terms, Privacy and Refund pages</span>
+          <span class="t-note">Paddle will not approve a seller without them, and week 1 is when they cost you nothing to write. Say plainly what you store about a child: a name, an age, ticks against tasks.</span></span></label></li>
+      </ul>
+      <p class="handnote">Do the Paddle sign-up this week too — verification is the long pole, and it runs while you pilot.</p>
+    </div>
+  </section>
+
+  <section class="phase">
+    <div class="weeks"><span class="wk">Weeks 2–4</span><span class="wk-sub">pilot</span></div>
+    <div class="phase-body">
+      <h2>Eight families, watched closely</h2>
+      <p class="aim">At this size you do not need analytics. You need to sit with people while they set it up and write
+        down every place they pause. Eight is enough to find the problems and few enough to answer personally.</p>
+      <div class="gate soft"><span class="gate-k">Needs</span>
+        <span>Week 1 complete. Each family gets a real account on the live address — not the demo.</span></div>
+      <ul class="tasks">
+        <li><label><input type="checkbox" id="p1"><span class="t-wrap"><span class="t-main">Recruit a deliberately mixed eight</span>
+          <span class="t-note">At least two children aged 10–12 and two aged 14–16; at least two iPhone families and two Android, because the install path differs; at least two outside Barbados, where the holiday calendar falls back to plain weekdays.</span></span></label></li>
+        <li><label><input type="checkbox" id="p2"><span class="t-wrap"><span class="t-main">Set each one up in person or on a call — and do not help</span>
+          <span class="t-note">Watch them do it. Every hesitation is a design note. The questions worth answering: do they finish in one sitting, do they set a PIN, do they set deadlines, do they import a timetable or type it.</span></span></label></li>
+        <li><label><input type="checkbox" id="p3"><span class="t-wrap"><span class="t-main">Open one support channel and log every message</span>
+          <span class="t-note">One WhatsApp group or one email address. Every question is either a bug, a missing FAQ answer, or a thing to say differently on the sales page.</span></span></label></li>
+        <li><label><input type="checkbox" id="p4"><span class="t-wrap"><span class="t-main">Ask for a dashboard screenshot at day 7 and day 14</span>
+          <span class="t-note">Average completion, current streak, points, perfect days — that is your whole analytics stack for this phase, and it costs the parent ten seconds.</span></span></label></li>
+        <li><label><input type="checkbox" id="p5"><span class="t-wrap"><span class="t-main">Decide in advance what "working" looks like</span>
+          <span class="t-note">A reasonable bar: five of eight children still ticking something at day 14, and at least half the parents saying they gave fewer reminders. Write the number down now so you cannot move it later.</span></span></label></li>
+        <li><label><input type="checkbox" id="p6"><span class="t-wrap"><span class="t-main">Fix only what blocks use, weekly</span>
+          <span class="t-note">Resist rebuilding during a pilot. Collect everything, ship one batch a week, tell the families what changed — they will keep reporting if they see it matter.</span></span></label></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="phase">
+    <div class="weeks"><span class="wk">Days 3 &amp; 14</span><span class="wk-sub">survey</span></div>
+    <div class="phase-body">
+      <h2>Two short surveys, not one long one</h2>
+      <p class="aim">The day‑3 survey is about setup, while it is still fresh. The day‑14 survey is about value and price,
+        once there is something to judge. Keep both under five minutes or you will get four replies.</p>
+      <div class="surveys">
+        <div class="survey">
+          <h3>Day 3 — did setup work?</h3>
+          <p class="when">5 questions · send the evening of day 3</p>
+          <ol>
+            <li>How long did setting it up take? <span>Under 10 min · 10–20 · 20–40 · I gave up</span></li>
+            <li>What was confusing, if anything? <span>Free text. This is the one that earns its keep.</span></li>
+            <li>Which did you set up? <span>Parent PIN · deadlines · timetable · rewards · none yet</span></li>
+            <li>Did your child pick their own character and theme? <span>Yes / no — a proxy for whether they took ownership.</span></li>
+            <li>Was anything missing that you expected? <span>Free text.</span></li>
+          </ol>
+        </div>
+        <div class="survey">
+          <h3>Day 14 — is it worth money?</h3>
+          <p class="when">8 questions · send the morning after the trial ends</p>
+          <ol>
+            <li>On how many of the 14 days did your child use it?</li>
+            <li>Did you give fewer reminders? <span>Many fewer · a few fewer · about the same · more</span></li>
+            <li>What did your child care about most? <span>Points · rewards · themes · their character's marks · streaks</span></li>
+            <li>What nearly made you stop using it? <span>Free text.</span></li>
+            <li>At what monthly price would it be <em>too cheap to trust</em>, <em>a bargain</em>, <em>getting expensive</em>, and <em>too expensive</em>? <span>Four prices, four answers. Do not ask "would you pay $3.99" — people say yes to be kind.</span></li>
+            <li>How many children would you use it for?</li>
+            <li>Yearly at two months free, or monthly?</li>
+            <li>Would you recommend it to another parent? <span>0–10.</span></li>
+          </ol>
+        </div>
+      </div>
+      <p class="handnote">Ask question 5 before you finalise the price on the site — not after.</p>
+    </div>
+  </section>
+
+  <section class="phase">
+    <div class="weeks"><span class="wk">Weeks 2–6</span><span class="wk-sub">billing</span></div>
+    <div class="phase-body">
+      <h2>Paddle, started early and finished late</h2>
+      <p class="aim">Start this in week 2 alongside the pilot, because verification is out of your hands and can take
+        a fortnight. Everything after verification is a day's work — the checkout code on the site is written and tested already.</p>
+      <div class="gate soft"><span class="gate-k">Long pole</span>
+        <span>Seller verification needs a live website, your business or personal details and a payout bank account. Submit it the same week the site goes up.</span></div>
+      <ul class="tasks">
+        <li><label><input type="checkbox" id="b1"><span class="t-wrap"><span class="t-main">Create the Paddle account and submit verification<span class="tag slow">days to weeks</span></span>
+          <span class="t-note">Paddle is the merchant of record, which is why it was chosen: they handle VAT and sales tax across every country a parent might buy from.</span></span></label></li>
+        <li><label><input type="checkbox" id="b2"><span class="t-wrap"><span class="t-main">Create two products and four prices</span>
+          <span class="t-note">Standard and Pro, each monthly and yearly. That yields the four price IDs the site's CONFIG block expects.</span></span></label></li>
+        <li><label><input type="checkbox" id="b3"><span class="t-wrap"><span class="t-main">Run a full sandbox checkout</span>
+          <span class="t-note">Set <code>environment: 'sandbox'</code> and the test client token, then buy each of the four prices with a test card. The overlay, the success return and the price IDs are all already covered by tests — this proves the account, not the code.</span></span></label></li>
+        <li><label><input type="checkbox" id="b4"><span class="t-wrap"><span class="t-main">Build the webhook that turns payment into access<span class="tag block">critical</span></span>
+          <span class="t-note">A Supabase Edge Function that verifies Paddle's signature and writes subscription status. Without it money arrives and the app never notices. Test the failure path too: a declined renewal must end access, not be ignored.</span></span></label></li>
+        <li><label><input type="checkbox" id="b5"><span class="t-wrap"><span class="t-main">Go live: production token, real price IDs, <code>environment: 'production'</code></span>
+          <span class="t-note">Then buy your own subscription with a real card and refund it. It is the only way to know the live path works.</span></span></label></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="phase">
+    <div class="weeks"><span class="wk">Weeks 4–6</span><span class="wk-sub">build</span></div>
+    <div class="phase-body">
+      <h2>Make the trial real</h2>
+      <p class="aim">Today the 15 days are a promise on a page: nothing records when a trial started, counts the days
+        or stops anyone at the end. This is the work that makes the business model exist.</p>
+      <div class="gate soft"><span class="gate-k">Order</span>
+        <span>Build this after the pilot has told you what to change, and before anyone is asked to pay.</span></div>
+      <ul class="tasks">
+        <li><label><input type="checkbox" id="t1"><span class="t-wrap"><span class="t-main">A <code>subscriptions</code> table</span>
+          <span class="t-note"><code>user_id</code>, <code>plan</code>, <code>status</code>, <code>trial_ends_at</code>, <code>current_period_end</code>. A sign-up trigger sets the trial to fifteen days out.</span></span></label></li>
+        <li><label><input type="checkbox" id="t2"><span class="t-wrap"><span class="t-main">RLS on it too: the parent may read their row and write none of it</span>
+          <span class="t-note">Status changes come only from the webhook, using the service role. A trial that a teenager can extend from the browser console is not a trial.</span></span></label></li>
+        <li><label><input type="checkbox" id="t3"><span class="t-wrap"><span class="t-main">A paywall the app checks on load</span>
+          <span class="t-note">Read the row from the server, not from the device. Expired and unpaid means a "your 15 days are up" screen with the two plans, not a silently degraded app.</span></span></label></li>
+        <li><label><input type="checkbox" id="t4"><span class="t-wrap"><span class="t-main">The deletion timers you already decided on</span>
+          <span class="t-note">Data kept 15 days past an unconverted trial, then deleted. Children two to four removed 30 days after Pro ends, with a warning and an export offered first. A scheduled job, not client code.</span></span></label></li>
+        <li><label><input type="checkbox" id="t5"><span class="t-wrap"><span class="t-main">Comp the family account</span>
+          <span class="t-note">One row for <code>mikahvbarrow@gmail.com</code> — status comped, period end far in the future. Data, not code: never hardcode the address in a page anyone can read.</span></span></label></li>
+        <li><label><input type="checkbox" id="t6"><span class="t-wrap"><span class="t-main">Let one real trial expire before launch</span>
+          <span class="t-note">Move a test account's <code>trial_ends_at</code> into the past and watch what a parent would see. This is the single most embarrassing thing to get wrong in public.</span></span></label></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="phase">
+    <div class="weeks"><span class="wk">Weeks 7–8</span><span class="wk-sub">launch</span></div>
+    <div class="phase-body">
+      <h2>Open the doors, slowly</h2>
+      <p class="aim">A soft launch to parents who already know you, then wider. The demo account is the marketing —
+        it lets a parent see a month of real-looking progress before they give you anything.</p>
+      <div class="gate soft"><span class="gate-k">Needs</span>
+        <span>A pilot family has taken a subscription end to end, and an expired trial has been seen with your own eyes.</span></div>
+      <ul class="tasks">
+        <li><label><input type="checkbox" id="l1"><span class="t-wrap"><span class="t-main">Fold the pilot's words into the sales page</span>
+          <span class="t-note">Their phrasing beats yours. "I stopped nagging about the school bag" is the headline you cannot write from the inside.</span></span></label></li>
+        <li><label><input type="checkbox" id="l2"><span class="t-wrap"><span class="t-main">Ask the eight for a sentence and permission to quote it</span></span></label></li>
+        <li><label><input type="checkbox" id="l3"><span class="t-wrap"><span class="t-main">Launch to school parent groups and your own network first</span>
+          <span class="t-note">Lead with the demo link, not the price. Parents share things they have already tried.</span></span></label></li>
+        <li><label><input type="checkbox" id="l4"><span class="t-wrap"><span class="t-main">Watch one number: trials started versus trials converted at day 15</span>
+          <span class="t-note">Everything else is noise at this stage. If conversion is under one in five, the problem is the product or the price, and the survey already told you which.</span></span></label></li>
+        <li><label><input type="checkbox" id="l5"><span class="t-wrap"><span class="t-main">Only then decide about the friends leaderboard and the Pro emails</span>
+          <span class="t-note">Both are real work, and both are better aimed once you know what the paying families actually use.</span></span></label></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="risks">
+    <h2>What could go wrong</h2>
+    <p>Ordered by what would cost the most to recover from, not by how likely they are.</p>
+    <div class="risk-list">
+      <div class="risk"><span class="sev high">Severe</span>
+        <div><b>One family reads another's data</b>
+          <p>The publishable key is in the page and in a public repo by design; that is normal, and harmless only while RLS is on. Verify it with two accounts before any invitation goes out, and again after every schema change.</p></div></div>
+      <div class="risk"><span class="sev high">Severe</span>
+        <div><b>Charging for Pro features that do not exist</b>
+          <p>The site sells weekly email reports, reward-waiting emails and a second parent login. None are built. Build them or remove them from the page before the first Pro subscription is taken.</p></div></div>
+      <div class="risk"><span class="sev med">Watch</span>
+        <div><b>Paddle verification lands after you are ready to sell</b>
+          <p>Nothing you can do to speed it up, which is exactly why it starts in week 2 rather than week 6.</p></div></div>
+      <div class="risk"><span class="sev med">Watch</span>
+        <div><b>iPhone families never install the app</b>
+          <p>Apple allows it only from Safari, via Share then Add to Home Screen. The app explains this now, but expect to walk at least one pilot parent through it, and count how many manage it alone.</p></div></div>
+      <div class="risk"><span class="sev med">Watch</span>
+        <div><b>The pilot turns into a rebuild</b>
+          <p>Eight engaged parents will generate more ideas than you can ship. Batch the changes weekly and keep a list of everything you are deliberately not doing yet.</p></div></div>
+    </div>
+  </section>
+
+  <footer class="end">
+    <span>Ticks are saved in this browser only</span>
+    <span>Unprompted · rollout v1</span>
+  </footer>
+</div>
+
+<script>
+  (function () {
+    var KEY = 'gt-rollout-ticks';
+    var boxes = Array.prototype.slice.call(document.querySelectorAll('.tasks input[type="checkbox"]'));
+    var fill = document.getElementById('fill');
+    var count = document.getElementById('count');
+
+    function load() {
+      try { return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { return {}; }
+    }
+    function save(state) {
+      try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* private window: ticks just won't persist */ }
+    }
+    function paint() {
+      var done = boxes.filter(function (b) { return b.checked; }).length;
+      count.textContent = done + ' of ' + boxes.length + ' done';
+      fill.style.width = (boxes.length ? (done / boxes.length) * 100 : 0) + '%';
+    }
+
+    var state = load();
+    boxes.forEach(function (b) {
+      if (state[b.id]) b.checked = true;
+      b.addEventListener('change', function () {
+        var s = load();
+        if (b.checked) s[b.id] = 1; else delete s[b.id];
+        save(s);
+        paint();
+      });
+    });
+    document.getElementById('reset').addEventListener('click', function () {
+      boxes.forEach(function (b) { b.checked = false; });
+      save({});
+      paint();
+    });
+    paint();
+  })();
+</script>

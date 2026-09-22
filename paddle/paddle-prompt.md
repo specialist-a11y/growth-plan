@@ -11,17 +11,17 @@ Pick one — don't paste both.
 ```
 Create my product catalog in my Paddle live account.
 
-I sell a subscription web app for families called 1GAMMA MB: a daily routine,
+I sell a subscription web app for families called Unprompted: a daily routine,
 homework and timetable tracker that a parent sets up for their child.
 
 Create two products, tax category "saas", each with a monthly and an annual
 price:
 
-- 1GAMMA MB Standard — one child
+- Unprompted Standard — one child
   Monthly: USD 3.99   (amount "399")
   Annual:  USD 39.00  (amount "3900")
 
-- 1GAMMA MB Pro — up to four children, second parent login, weekly email reports
+- Unprompted Pro — up to four children, second parent login, weekly email reports
   Monthly: USD 6.99   (amount "699")
   Annual:  USD 69.00  (amount "6900")
 
