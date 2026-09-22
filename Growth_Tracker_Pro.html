@@ -3847,6 +3847,30 @@ body.demo-on #appSidebar{ top:var(--demo-bar-h,46px) !important; height:calc(100
   .install-bar{ bottom:calc(74px + env(safe-area-inset-bottom,0px)); gap:8px; }
   .install-bar .action{ flex:1 1 auto; }
 }
+/* the panel that explains the marks */
+.ms-card{ width:min(520px,100%); }
+.ms-list{ display:flex; flex-direction:column; gap:10px; margin:4px 0 0; }
+.ms-item{ display:grid; grid-template-columns:38px minmax(0,1fr); gap:12px; align-items:start;
+  padding:12px 13px; border:1px solid var(--t-line,#26262e); border-radius:14px; background:var(--t-panel-2,#1b1b21); }
+.ms-item.got{ border-color:rgba(255,199,60,.5); background:rgba(255,199,60,.08); }
+.ms-item.hi{ box-shadow:0 0 0 2px var(--accent); }
+.ms-item .ms-badge{ font-size:24px; line-height:1.1; text-align:center; }
+.ms-item h4{ margin:0 0 2px; font-size:14.5px; display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+.ms-item h4 span{ font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
+.ms-item h4 .got-tag{ color:#ffc73c; }
+.ms-item h4 .left-tag{ color:var(--t-muted,#8d8d99); }
+.ms-item p{ margin:0; font-size:12.5px; color:var(--t-muted,#8d8d99); line-height:1.55; }
+.ms-bar{ height:5px; border-radius:99px; background:rgba(255,255,255,.10); margin-top:8px; overflow:hidden; }
+.ms-bar i{ display:block; height:100%; border-radius:99px; background:var(--accent); }
+.ms-item.got .ms-bar i{ background:#ffc73c; }
+.ms-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:14px; }
+.ms-head > span{ font-size:11.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--t-muted,#8d8d99); }
+.ms-learn{ border:0; background:none; padding:0; font:inherit; font-size:12px; font-weight:700;
+  color:var(--accent); cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
+/* the house mark: a gold seal, plainly above the rest */
+#avatarBuddyImg.ms-mvb, #heroAvatar.ms-mvb{ filter:drop-shadow(0 0 12px rgba(255,199,60,.9)) drop-shadow(0 4px 14px rgba(0,0,0,.5)); }
+.ms-mvb-host::after{ content:'🏆'; position:absolute; right:6%; bottom:6%; font-size:26px;
+  filter:drop-shadow(0 2px 6px rgba(0,0,0,.6)); pointer-events:none; }
 /* ===== MILESTONE MARKS =====
    Earned by doing the work, so they are deliberately different from anything
    the store sells: movement and light rather than a static ring. */
@@ -4185,6 +4209,18 @@ body.theme-sportscar .hero::after {
 </div>
 
 <div id="milestonePop" class="ms-pop" hidden></div>
+
+<div class="ix-backdrop" id="marksHelp" hidden>
+  <div class="ix-card ms-card" role="dialog" aria-modal="true" aria-labelledby="marksTitle">
+    <button class="ix-close" onclick="closeMarks()" aria-label="Close">✕</button>
+    <h3 id="marksTitle">Marks on your character</h3>
+    <p class="ix-lead">Five things to earn by doing the work. They change how your character looks —
+      and they are the only things here that points cannot buy.</p>
+    <div id="marksList" class="ms-list"></div>
+    <p class="ix-foot meta"><b>Earned, never sold.</b> Nothing in the store can give you these.<br>
+      <b>Yours for good.</b> Break a streak and you lose the streak, not the mark it earned you.</p>
+  </div>
+</div>
 
 <div class="ix-backdrop" id="installHelp" hidden>
   <div class="ix-card" role="dialog" aria-modal="true" aria-labelledby="ixTitle">
@@ -4932,8 +4968,11 @@ body.theme-sportscar .hero::after {
         <div id="avatarBuddyName" style="font-weight:800; font-size:15px; color:#fff; margin-top:8px;">Pick your character</div>
         <div id="avatarBuddyTag" style="font-size:12px; color:var(--t-muted,#8d8d99); margin-top:2px;">Choose an avatar to represent you</div>
         <button class="action ghost" style="width:100%; margin-top:12px;" onclick="openAvatarPicker()">🧍 Choose Avatar</button>
+        <div class="ms-head">
+          <span>Marks</span>
+          <button type="button" class="ms-learn" onclick="openMarks()">How these work</button>
+        </div>
         <div class="ms-strip" id="milestoneStrip"></div>
-        <div class="meta" style="margin-top:8px; font-size:11.5px;">Marks are earned, never bought — and never taken away.</div>
       </div>
 
       <!-- Sneaker Motivation Card -->
@@ -11239,21 +11278,33 @@ const MILESTONE_KEY = 'teen-milestones';
 const MILESTONES = [
   { id: 'spark',  name: 'Spark',     icon: '✨', cls: 'ms-spark',
     need: 'A 7-day streak',            blurb: 'Seven days in a row with something ticked off.',
+    how: 'Tick at least one thing every day for a week. Miss a day and the count starts again — but a mark you already earned stays.',
     progress: st => [Math.min(st.bestStreak, 7), 7],
     earned: st => st.bestStreak >= 7 },
   { id: 'halo',   name: 'Halo',      icon: '😇', cls: 'ms-halo',
     need: '30 perfect days',           blurb: 'Thirty days where the whole routine was done.',
+    how: 'Finish every task set for the day — the whole list, not most of it. They add up across months; they do not need to be in a row.',
     progress: st => [Math.min(st.perfectDays, 30), 30],
     earned: st => st.perfectDays >= 30 },
   { id: 'aura',   name: 'Aura',      icon: '🌈', cls: 'ms-aura',
     need: '1,000 points earned',       blurb: 'A thousand points earned in total — not spent, earned.',
+    how: 'Five points a task, 25 for a perfect day, 50 for each seven-day streak. Spending points in the store does not lose you this — it counts what was earned, ever.',
     progress: st => [Math.min(st.pointsEver, 1000), 1000],
     earned: st => st.pointsEver >= 1000 },
   { id: 'legend', name: 'Legend',    icon: '🏅', cls: 'ms-legend',
     need: '40 school days of homework, none missed',
     blurb: 'Forty school days in a row where homework was done, and done on time.',
+    how: 'Do your homework on every school day, and do it before the deadline. One missed or late day starts the count again.',
     progress: st => [Math.min(st.bestHomeworkRun, 40), 40],
-    earned: st => st.bestHomeworkRun >= 40 }
+    earned: st => st.bestHomeworkRun >= 40 },
+  /* The house mark. Deliberately the hardest thing here: every other mark, and
+     then a hundred perfect days on top. */
+  { id: 'mvb',    name: 'MVB',       icon: '🏆', cls: 'ms-mvb',
+    need: 'Every other mark, and 100 perfect days',
+    blurb: 'The highest mark in the app. Named after the first child who used it.',
+    how: 'Earn Spark, Halo, Aura and Legend, then keep going until 100 days have been completed in full. Almost nobody has this.',
+    progress: st => [Math.min(st.perfectDays, 100), 100],
+    earned: st => st.perfectDays >= 100 && st.bestStreak >= 7 && st.pointsEver >= 1000 && st.bestHomeworkRun >= 40 }
 ];
 
 /* Completion for a day in any month, not just the one on screen. */
@@ -11346,7 +11397,8 @@ function announceMilestone(m) {
   if (!box) return;
   box.innerHTML = `<div class="ms-pop-in">
       <span class="ms-pop-icon">${m.icon}</span>
-      <div><b>${escapeHTML(m.name)} unlocked!</b><div class="meta">${escapeHTML(m.blurb)}</div></div>
+      <div><b>${escapeHTML(m.name)} unlocked!</b><div class="meta">${escapeHTML(m.blurb)}</div>
+        <button type="button" class="ms-learn" style="margin-top:4px;" onclick="openMarks('${m.id}')">See all the marks</button></div>
     </div>`;
   box.hidden = false;
   clearTimeout(announceMilestone.t);
@@ -11369,6 +11421,41 @@ function applyMilestoneLook() {
   });
 }
 
+/* The marks only work as an incentive if a child can see what earns them. */
+function renderMarksPanel(highlight) {
+  const box = document.getElementById('marksList');
+  if (!box) return;
+  const have = earnedMilestones();
+  const st = milestoneStats();
+  box.innerHTML = MILESTONES.map(m => {
+    const got = !!have[m.id];
+    const [at, of] = m.progress(st);
+    const pct = Math.max(0, Math.min(100, Math.round((at / of) * 100)));
+    const left = of - at;
+    return `<div class="ms-item${got ? ' got' : ''}${highlight === m.id ? ' hi' : ''}">
+      <div class="ms-badge">${got ? m.icon : '🔒'}</div>
+      <div>
+        <h4>${escapeHTML(m.name)}
+          ${got ? '<span class="got-tag">Earned</span>'
+                : `<span class="left-tag">${left.toLocaleString()} to go</span>`}</h4>
+        <p><b>${escapeHTML(m.need)}.</b> ${escapeHTML(m.how || m.blurb)}</p>
+        <div class="ms-bar"><i style="width:${pct}%"></i></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function openMarks(id) {
+  renderMarksPanel(id);
+  const box = document.getElementById('marksHelp');
+  if (box) box.hidden = false;
+}
+function closeMarks() {
+  const box = document.getElementById('marksHelp');
+  if (box) box.hidden = true;
+}
+document.addEventListener('click', e => { if (e.target && e.target.id === 'marksHelp') closeMarks(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMarks(); });
+
 function renderMilestones() {
   const box = document.getElementById('milestoneStrip');
   if (!box) return;
@@ -11377,7 +11464,8 @@ function renderMilestones() {
   box.innerHTML = MILESTONES.map(m => {
     const got = !!have[m.id];
     const [at, of] = m.progress(st);
-    return `<div class="ms-chip${got ? ' got' : ''}" title="${escapeHTML(m.blurb)}">
+    return `<div class="ms-chip${got ? ' got' : ''}" role="button" tabindex="0" title="${escapeHTML(m.blurb)}"
+      onclick="openMarks('${m.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openMarks('${m.id}')}">
       <span class="ms-ico">${got ? m.icon : '🔒'}</span>
       <div><b>${escapeHTML(m.name)}</b>
         <small>${got ? 'Earned — yours for good' : `${escapeHTML(m.need)} · ${at} of ${of}`}</small>
