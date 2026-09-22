@@ -4021,6 +4021,10 @@ body.demo-on #appSidebar{ top:var(--demo-bar-h,46px) !important; height:calc(100
   .pd-page div[style*="grid-template-columns:1fr 1fr"]{ grid-template-columns:1fr !important; }
   .pd-page div[style*="grid-template-columns:repeat(3"]{ grid-template-columns:1fr !important; }
 }
+/* what only a Pro family can wear */
+.store-pro{ position:absolute; left:8px; top:8px; font-size:9.5px; font-weight:800; letter-spacing:.09em;
+  padding:2px 7px; border-radius:99px; background:linear-gradient(96deg,var(--accent),var(--accent-2)); color:#fff; }
+.store-card.pro-locked .store-preview img, .store-card.pro-locked .swatch{ filter:grayscale(.5) brightness(.75); }
 /* the shop's toolbar */
 .store-toolbar{ display:flex; flex-direction:column; gap:10px; margin:14px 0 4px; }
 .store-chips{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
@@ -7470,7 +7474,7 @@ function renderThemeGrid() {
     const ownedTheme = typeof ownsItem === 'function' ? ownsItem('theme:' + t.key) : true;
     card.innerHTML = `
       <div class="theme-preview-img" style="${imgStyle}">
-        <span class="theme-badge-tag">${ownedTheme ? t.badge : '🔒 ' + (storeItem('theme:' + t.key) || {}).price + ' pts'}</span>
+        <span class="theme-badge-tag">${ownedTheme ? t.badge : (isProItem('theme', t.key) && !hasPro() ? '✨ Pro only' : '🔒 ' + (storeItem('theme:' + t.key) || {}).price + ' pts')}</span>
         ${isSelected ? '<span class="theme-check-indicator">✓</span>' : ''}
       </div>
       <div style="padding: 14px; display: flex; flex-direction: column; flex: 1; justify-content: space-between;">
@@ -11098,7 +11102,7 @@ function renderAvatarGrid() {
     <button type="button" class="avatar-card${a.id === selectedAvatar ? ' selected' : ''}" onclick="chooseAvatar('${a.id}')">
       <img src="${a.full}" alt="${escapeHTML(a.name)}" loading="lazy" />
       <div class="avatar-card-name">${escapeHTML(a.name)}</div>
-      <div class="avatar-card-tag">${owned ? escapeHTML(a.tag) : '🔒 ' + price + ' pts'}</div>
+      <div class="avatar-card-tag">${owned ? escapeHTML(a.tag) : (isProItem('avatar', a.id) && !hasPro() ? '✨ Pro only' : '🔒 ' + price + ' pts')}</div>
     </button>`; }).join('');
 }
 
@@ -11356,6 +11360,37 @@ const storeKey = 'teen-store';
 const FREE_THEMES = ['default', 'sneakers'];
 const FREE_AVATARS = ['pixel', 'sunny'];
 
+/* ===== WHAT COMES WITH PRO =====
+   A dozen themes and eight characters that only a Pro family can wear. They
+   are still bought with points like everything else — Pro is what puts them on
+   the shelf. Chosen to be plainly the best-looking ones, so the difference is
+   visible from the store rather than described in a plan comparison. */
+const PRO_THEMES = [
+  'mansion_luxe', 'coastal_villa', 'skyline_penthouse', 'forest_retreat', 'desert_estate',  // dream homes
+  'atlantis_luxe', 'bioluminescent_reef',                                                   // underwater
+  'aurora_orbit', 'solar_ascent',                                                           // space
+  'titanium_track', 'electric_velocity',                                                    // speed
+  'checkmate_elite'                                                                          // sport
+];
+const PRO_AVATARS = ['leader', 'scholar', 'innovator', 'strategist', 'achiever', 'gamechanger', 'thinker', 'tablet'];
+
+function isProItem(kind, key) {
+  if (kind === 'theme') return PRO_THEMES.indexOf(key) !== -1;
+  if (kind === 'avatar') return PRO_AVATARS.indexOf(key) !== -1;
+  return false;
+}
+
+/* Whether this family is on Pro.
+   There is no subscriptions table yet, so everybody is inside their trial and
+   everybody has Pro — which is true, not generous. The moment entitlements
+   exist this is the one function that has to learn about them. */
+function hasPro() {
+  if (typeof demoMode === 'function' && demoMode()) return true;   // the demo shows the whole product
+  const cfg = (typeof parentConfig === 'function' && parentConfig()) || {};
+  if (cfg.plan === 'standard') return false;
+  return true;
+}
+
 /* Avatars are grouped the same way themes are, so 30 of them stay browsable.
    Anything missing from every list still shows, under "More". */
 const AVATAR_CATEGORIES = [
@@ -11450,6 +11485,9 @@ function buyItem(id) {
   if (!it) return;
   if (!storeEnabled()) return storeMsg('⚠️ The store is switched off. A parent can turn it back on in the Parent Dashboard.');
   if (ownsItem(id)) return equipItem(id);
+  if (isProItem(it.kind, it.themeKey || it.avatarId) && !hasPro()) {
+    return storeMsg(`✨ <b>${escapeHTML(it.name)}</b> comes with Pro. Ask a parent — everything you have already bought stays yours either way.`);
+  }
   const balance = pointsBalance();
   if (balance < it.price) return storeMsg(`⚠️ <b>${escapeHTML(it.name)}</b> costs ${it.price} points. You have ${balance} — ${it.price - balance} to go.`);
   if (!confirm(`Spend ${it.price} points on ${it.name}?\n\nYou have ${balance} points.`)) return;
@@ -11561,10 +11599,12 @@ function renderStore() {
           } else {
             preview = `<span class="big">${i.emoji}</span>`;
           }
-          const label = !owned ? `Unlock` : (equipped ? (['frame', 'name', 'sticker'].includes(i.kind) ? 'Remove' : 'Wearing') : 'Use it');
+          const proOnly = isProItem(i.kind, i.themeKey || i.avatarId);
+          const proLocked = proOnly && !hasPro();
+          const label = !owned ? (proLocked ? 'Pro only' : 'Unlock') : (equipped ? (['frame', 'name', 'sticker'].includes(i.kind) ? 'Remove' : 'Wearing') : 'Use it');
           const disabled = owned && equipped && !['frame', 'name', 'sticker'].includes(i.kind) ? 'disabled' : '';
-          return `<div class="store-card${owned ? ' owned' : ''}${equipped ? ' equipped' : ''}">
-            <div class="store-preview">${preview}${owned ? '' : '<span class="store-lock">🔒</span>'}</div>
+          return `<div class="store-card${owned ? ' owned' : ''}${equipped ? ' equipped' : ''}${proLocked ? ' pro-locked' : ''}">
+            <div class="store-preview">${preview}${owned ? '' : '<span class="store-lock">🔒</span>'}${proOnly ? '<span class="store-pro">PRO</span>' : ''}</div>
             <div class="store-name">${escapeHTML(i.name)}</div>
             <div class="store-sub">${escapeHTML(i.sub || '')}</div>
             <div class="store-foot">
@@ -12205,7 +12245,7 @@ function renderThemeGrid() {
     const ownedTheme = typeof ownsItem === 'function' ? ownsItem('theme:' + t.key) : true;
     card.innerHTML = `
       <div class="theme-preview-img" style="${imgStyle}">
-        <span class="theme-badge-tag">${ownedTheme ? t.badge : '🔒 ' + (storeItem('theme:' + t.key) || {}).price + ' pts'}</span>
+        <span class="theme-badge-tag">${ownedTheme ? t.badge : (isProItem('theme', t.key) && !hasPro() ? '✨ Pro only' : '🔒 ' + (storeItem('theme:' + t.key) || {}).price + ' pts')}</span>
         ${isSelected ? '<span class="theme-check-indicator">✓</span>' : ''}
       </div>
       <div style="padding: 14px; display: flex; flex-direction: column; flex: 1; justify-content: space-between;">
