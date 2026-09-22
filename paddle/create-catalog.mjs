@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Create the Unprompted product catalogue in Paddle.
+ * Create the UNPROMPTED product catalogue in Paddle.
  *
  *   node paddle/create-catalog.mjs                 # dry run: prints what it would create
  *   PADDLE_API_KEY=pdl_sdbx_... node paddle/create-catalog.mjs --apply
@@ -36,7 +36,7 @@ const PADDLE_TRIAL = null;            // or: { interval: 'day', frequency: 15 }
 const CATALOG = [
   {
     key: 'standard',
-    name: 'Unprompted Standard',
+    name: 'UNPROMPTED Standard',
     description: 'Daily routine, timetable, points and rewards for one child, with automatic backup.',
     prices: [
       {
@@ -57,7 +57,7 @@ const CATALOG = [
   },
   {
     key: 'pro',
-    name: 'Unprompted Pro',
+    name: 'UNPROMPTED Pro',
     description: 'Everything in Standard for up to four children, with a second parent login and weekly email reports.',
     prices: [
       {

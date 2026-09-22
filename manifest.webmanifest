@@ -1,7 +1,7 @@
 {
-  "name": "Unprompted",
-  "short_name": "Unprompted",
-  "description": "Unprompted is a daily routine, homework and timetable tracker for teens, set up by a parent. Points, streaks and rewards they actually want.",
+  "name": "UNPROMPTED",
+  "short_name": "UNPROMPTED",
+  "description": "UNPROMPTED is a daily routine, homework and timetable tracker for teens, set up by a parent. Points, streaks and rewards they actually want.",
   "start_url": "./Growth_Tracker_Pro.html",
   "scope": "./",
   "display": "standalone",
