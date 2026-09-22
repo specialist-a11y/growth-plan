@@ -140,6 +140,22 @@ export function weeklyReport(rows, settings, today) {
   };
 }
 
+/** Split one account's rows into a child each: settings row plus month rows.
+    Rows from before children existed carry no child_id; they are the one
+    child that account always had. */
+export function groupByChild(rows) {
+  const byChild = new Map();
+  for (const r of rows || []) {
+    const key = r.child_id || 'legacy';
+    if (!byChild.has(key)) byChild.set(key, { childId: r.child_id || null, settings: null, months: [] });
+    const c = byChild.get(key);
+    if (r.month_key === SETTINGS_ROW) c.settings = readSettings(r.tracker_data || {});
+    else c.months.push(r);
+  }
+  // a child with no settings row has never synced: nothing to report on
+  return [...byChild.values()].filter(c => c.settings);
+}
+
 /** Claims the parent has not been told about yet. */
 export function newClaims(settings, alreadyTold) {
   const told = new Set(alreadyTold || []);
