@@ -3879,6 +3879,19 @@ body.demo-on #appSidebar{ top:var(--demo-bar-h,46px) !important; height:calc(100
      date one column left — the 22nd landed under Monday */
   .calendar .day.empty{ display:block !important; height:58px !important; }
 }
+/* a second parent */
+.hh-box{ border:1px solid var(--t-line,#26262e); border-radius:14px; padding:14px; background:var(--t-panel-2,#1b1b21); }
+.hh-list{ display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
+.hh-row{ display:flex; align-items:center; gap:10px; padding:9px 11px; border:1px solid var(--t-line,#26262e); border-radius:11px; font-size:13.5px; }
+.hh-row b{ font-weight:700; }
+.hh-row .action{ margin-left:auto; }
+.hh-invite{ margin:0 0 12px; padding:12px; border:1px dashed var(--accent); border-radius:12px; display:flex; flex-direction:column; gap:8px; }
+.hh-code{ font-family:var(--mono,ui-monospace,monospace); font-size:24px; font-weight:800; letter-spacing:.22em;
+  text-align:center; padding:10px; background:rgba(255,255,255,.05); border-radius:10px; color:var(--t-text,#f2f2f5); }
+.hh-join-row{ display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+.hh-join-row input{ flex:1 1 150px; min-width:0; }
+.pro-chip{ font-size:10px; font-weight:800; letter-spacing:.09em; padding:2px 7px; border-radius:99px;
+  background:linear-gradient(96deg,var(--accent),var(--accent-2)); color:#fff; vertical-align:3px; }
 /* which emails a parent wants */
 .em-box{ border:1px solid var(--t-line,#26262e); border-radius:14px; padding:6px 14px 12px; background:var(--t-panel-2,#1b1b21); }
 .em-row{ display:grid; grid-template-columns:22px minmax(0,1fr); gap:11px; align-items:start; padding:12px 0;
@@ -4962,6 +4975,40 @@ body.theme-sportscar .hero::after {
         <button class="action ghost" onclick="qRestoreDefaults()">↻ Restore Default Quotes</button>
       </div>
       <div id="qwNow" class="qw-now"></div>
+
+      <h3 id="familySection" style="font-size:16px; font-weight:800; margin:22px 0 6px;">👥 A second parent <span class="pro-chip">PRO</span></h3>
+      <div class="meta" style="margin-bottom:10px;">Another parent or carer, with their own login, seeing the same child. Either of you can approve rewards; neither can see the other's password.</div>
+      <div id="householdBox" class="hh-box">
+        <div id="hhNeedsAccount" class="meta" hidden>
+          This needs an account on both sides, so there is something to share.
+          <button class="action ghost" style="margin-top:8px;" onclick="openSettings()">🔑 Sign in or create an account</button>
+        </div>
+
+        <div id="hhOwner" hidden>
+          <div id="hhMembers" class="hh-list"></div>
+          <div id="hhInvite" class="hh-invite" hidden>
+            <div class="meta">Give this code to the other parent. They sign in, open this page and enter it. It works once, and expires in 7 days.</div>
+            <div class="hh-code" id="hhCode"></div>
+            <button class="action ghost" onclick="copyHouseholdCode()">Copy code</button>
+          </div>
+          <button class="action ghost" id="hhInviteBtn" onclick="makeHouseholdInvite()">＋ Invite a second parent</button>
+        </div>
+
+        <div id="hhMember" hidden>
+          <div class="meta" id="hhMemberNote"></div>
+          <button class="action ghost" style="margin-top:10px;" onclick="leaveHousehold()">Leave this family</button>
+        </div>
+
+        <div id="hhJoin" hidden>
+          <div class="meta">Been given a code by the other parent?</div>
+          <div class="hh-join-row">
+            <input id="hhJoinCode" type="text" maxlength="12" placeholder="Enter code" autocomplete="off"
+                   style="border:1px solid var(--border); border-radius:12px; padding:10px; text-transform:uppercase; letter-spacing:.12em; font-weight:700;">
+            <button class="action primary" onclick="joinHousehold()">Join</button>
+          </div>
+        </div>
+        <div id="hhMsg" class="meta" style="margin-top:8px;"></div>
+      </div>
 
       <h3 id="emailSection" style="font-size:16px; font-weight:800; margin:22px 0 6px;">✉️ Email me about</h3>
       <div class="meta" style="margin-bottom:10px;">Sent to the address you signed in with. Nothing here is sent to your child.</div>
@@ -6412,6 +6459,35 @@ var MONTH_PREFIX = 'teen-growth-month-';
 var syncApplying = false, syncBooting = true, syncRunning = false, syncQueued = false;
 var syncTimer = null, syncRetryTimer = null, syncRetryDelay = 5000, lastPullAt = 0;
 
+/* ===== A SECOND PARENT =====
+   Two logins, one child's data. The data keeps belonging to the parent who
+   created it; a second parent is granted access to it rather than given a
+   copy, so nothing already stored has to move. Every read and write of family
+   data goes through dataOwnerId() — which is your own id, unless you were
+   invited into someone else's household. */
+let householdOwnerId = null;      // resolved from the server at sign-in
+let householdRole = 'owner';      // 'owner' or 'member'
+
+function dataOwnerId() {
+  if (householdOwnerId) return householdOwnerId;
+  return (session && session.user && session.user.id) || null;
+}
+function isHouseholdOwner() { return householdRole === 'owner'; }
+
+async function resolveHousehold() {
+  householdOwnerId = null;
+  householdRole = 'owner';
+  if (!cloudSession()) return;
+  try {
+    const { data, error } = await sb.rpc('household_owner');
+    if (error) throw error;
+    if (data && data !== session.user.id) { householdOwnerId = data; householdRole = 'member'; }
+  } catch (e) {
+    // the household tables may not exist yet: carry on as a single parent
+    console.info('Household not resolved:', e.message);
+  }
+}
+
 function cloudSession() {
   return !!(sb && session && session.user && session.user.id && !String(session.user.email || '').includes('(Local Profile)'));
 }
@@ -6462,7 +6538,7 @@ async function pushChanges() {
   if (!hasPendingSync(st)) return renderSyncStatus();
   syncRunning = true;
   renderSyncStatus('pending');
-  const uid = session.user.id, now = new Date().toISOString();
+  const uid = dataOwnerId(), now = new Date().toISOString();
   const rows = [], sentMonths = [];
   let sentSettings = null;
   Object.keys(st.months).forEach(m => {
@@ -6507,7 +6583,7 @@ async function pullFromCloud() {
   try {
     const { data, error } = await sb.from('growth_months')
       .select('month_key,tracker_data,intentions,books,updated_at')
-      .eq('user_id', session.user.id);
+      .eq('user_id', dataOwnerId());
     if (error) throw error;
     rows = data || [];
   } catch (e) { scheduleRetry(); return renderSyncStatus('error'); }
@@ -6818,11 +6894,12 @@ async function saveRecoveredPassword() {
 }
 
 async function loadCloud() {
-  return pullFromCloud();   // the old single-month loader below is no longer reached
+  await resolveHousehold();   // whose rows to pull, before pulling any
+  return pullFromCloud();     // the old single-month loader below is no longer reached
   if (!sb || !session) return;
   setCloud('Loading cloud data…');
   const monthKey = 'teen-' + currentMonth;
-  const { data, error } = await sb.from('growth_months').select('tracker_data,intentions,books').eq('user_id', session.user.id).eq('month_key', monthKey).maybeSingle();
+  const { data, error } = await sb.from('growth_months').select('tracker_data,intentions,books').eq('user_id', dataOwnerId()).eq('month_key', monthKey).maybeSingle();
   if (error) {
     setCloud('Cloud load error: ' + error.message);
     return;
@@ -10047,6 +10124,111 @@ async function changeAccountPassword() {
   document.getElementById('secNewPassword2').value = '';
   secMsg('🟢 Password changed. Use it next time you sign in.', true);
 }
+/* ===== THE SECOND PARENT, ON SCREEN ===== */
+function hhMsg(text, good) {
+  const el = document.getElementById('hhMsg');
+  if (el) el.innerHTML = text ? (good ? '🟢 ' : '⚠️ ') + text : '';
+}
+
+async function renderHousehold() {
+  const box = document.getElementById('householdBox');
+  if (!box) return;
+  const on = cloudSession();
+  const show = (id, v) => { const el = document.getElementById(id); if (el) el.hidden = !v; };
+  show('hhNeedsAccount', !on);
+  show('hhOwner', false); show('hhMember', false); show('hhJoin', false);
+  if (!on) return;
+
+  await resolveHousehold();
+  if (!isHouseholdOwner()) {
+    show('hhMember', true);
+    const note = document.getElementById('hhMemberNote');
+    if (note) note.textContent = 'You were invited into this family, so you see the same child as the parent who set it up.';
+    return;
+  }
+
+  show('hhOwner', true);
+  try {
+    const { data, error } = await sb.from('household_members').select('member_id, role, created_at').eq('owner_id', session.user.id);
+    if (error) throw error;
+    const list = document.getElementById('hhMembers');
+    if (list) {
+      list.innerHTML = (data || []).length
+        ? (data || []).map(m => `<div class="hh-row"><span>👤</span>
+            <span><b>A second parent</b><br><span class="meta">joined ${escapeHTML(new Date(m.created_at).toLocaleDateString())}</span></span>
+            <button class="action ghost tt-mini" onclick="removeHouseholdMember('${m.member_id}')">Remove</button></div>`).join('')
+        : '<div class="meta">Nobody else yet.</div>';
+    }
+    // only one second parent for now: four children comes next, and that is
+    // where more seats will make sense
+    const btn = document.getElementById('hhInviteBtn');
+    if (btn) btn.hidden = (data || []).length >= 1;
+    show('hhJoin', (data || []).length === 0);
+  } catch (e) {
+    console.info('Household list unavailable:', e.message);
+    show('hhJoin', true);
+  }
+}
+
+async function makeHouseholdInvite() {
+  hhMsg('');
+  try {
+    const { data, error } = await sb.rpc('create_household_invite', { p_email: null });
+    if (error) throw error;
+    const code = document.getElementById('hhCode');
+    if (code) code.textContent = data;
+    const box = document.getElementById('hhInvite');
+    if (box) box.hidden = false;
+    const btn = document.getElementById('hhInviteBtn');
+    if (btn) btn.hidden = true;
+  } catch (e) { hhMsg('Could not make an invitation: ' + escapeHTML(e.message)); }
+}
+
+function copyHouseholdCode() {
+  const code = (document.getElementById('hhCode') || {}).textContent || '';
+  if (!code) return;
+  navigator.clipboard?.writeText(code).then(() => hhMsg('Code copied. It works once, and expires in 7 days.', true))
+    .catch(() => hhMsg('Copy did not work — read it out instead: ' + escapeHTML(code)));
+}
+
+async function joinHousehold() {
+  const input = document.getElementById('hhJoinCode');
+  const code = ((input || {}).value || '').trim();
+  if (!code) return hhMsg('Enter the code the other parent gave you.');
+  hhMsg('');
+  try {
+    const { error } = await sb.rpc('accept_household_invite', { p_code: code });
+    if (error) throw error;
+    if (input) input.value = '';
+    hhMsg('Joined. Loading the family\'s data…', true);
+    await loadCloud();
+    renderAll();
+    await renderHousehold();
+  } catch (e) { hhMsg(escapeHTML(e.message)); }
+}
+
+async function removeHouseholdMember(memberId) {
+  if (!confirm('Remove this parent? They keep their own login but will no longer see your child.')) return;
+  try {
+    const { error } = await sb.from('household_members').delete()
+      .eq('owner_id', session.user.id).eq('member_id', memberId);
+    if (error) throw error;
+    hhMsg('Removed.', true);
+    await renderHousehold();
+  } catch (e) { hhMsg('Could not remove them: ' + escapeHTML(e.message)); }
+}
+
+async function leaveHousehold() {
+  if (!confirm('Leave this family? You will no longer see this child, and your own account stays as it is.')) return;
+  try {
+    const { error } = await sb.from('household_members').delete().eq('member_id', session.user.id);
+    if (error) throw error;
+    householdOwnerId = null; householdRole = 'owner';
+    hhMsg('You have left.', true);
+    await renderHousehold();
+  } catch (e) { hhMsg('Could not leave: ' + escapeHTML(e.message)); }
+}
+
 /* ===== WHICH EMAILS A PARENT WANTS =====
    Kept in Supabase rather than on the device: the thing that sends the emails
    is a scheduled job on the server, and it cannot read a phone's storage. */
@@ -10238,6 +10420,7 @@ function renderParentDashboard() {
   renderParentQuotes();
   renderParentSecurity();
   loadEmailPrefs();
+  renderHousehold();
   const focus = parentFocusSection;
   parentFocusSection = null;
   const target = focus ? document.getElementById(focus) : null;
@@ -11728,7 +11911,7 @@ async function syncAvatarToCloud() {
   if (!sb || !session || !session.user.id) return;
   try {
     const { error } = await sb.from('profiles').upsert(
-      { user_id: session.user.id, avatar: selectedAvatar, updated_at: new Date().toISOString() },
+      { user_id: dataOwnerId(), avatar: selectedAvatar, updated_at: new Date().toISOString() },
       { onConflict: 'user_id' });
     if (error) console.info('Avatar not synced (profiles table missing?):', error.message);
   } catch (e) { console.info('Avatar sync skipped:', e.message); }
@@ -11737,7 +11920,7 @@ async function syncAvatarToCloud() {
 async function loadAvatarFromCloud() {
   if (!sb || !session || !session.user.id) return;
   try {
-    const { data, error } = await sb.from('profiles').select('avatar').eq('user_id', session.user.id).maybeSingle();
+    const { data, error } = await sb.from('profiles').select('avatar').eq('user_id', dataOwnerId()).maybeSingle();
     if (error) return console.info('Avatar not loaded (profiles table missing?):', error.message);
     if (data && data.avatar && AVATARS.some(a => a.id === data.avatar)) {
       selectedAvatar = data.avatar;

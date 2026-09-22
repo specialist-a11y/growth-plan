@@ -82,6 +82,38 @@ appeared that the parent has not been told about.
 - **Deadline emails are off by default.** A daily list of misses is the one
   that gets a product muted, so a parent has to ask for it.
 
+## A second parent
+
+`02-household.sql` adds it. Run it after `01-emails.sql`.
+
+The data keeps belonging to the parent who created it. A second parent is
+granted access rather than given a copy, so **no existing row moves and
+`growth_months` does not change shape** — only the policies on it do.
+
+- `household_members` — who may see whose data
+- `household_invites` — an eight-character code, good once, expires in 7 days
+- `create_household_invite()` / `accept_household_invite()` — the only ways in,
+  both `security definer`, because joining has to check an invitation the
+  joiner is not allowed to read
+- `household_owner()` — whose data this login opens, which the app asks on
+  every sign-in before pulling anything
+
+Email preferences stay personal: two parents can want different emails about
+the same child.
+
+**Prove it with two accounts before anyone relies on it**, the same way you
+proved RLS:
+
+```sql
+-- as the parent who set it up
+select create_household_invite('carer@example.com');
+-- as the invited parent
+select accept_household_invite('THATCODE');
+select count(*) from growth_months;      -- sees the family's rows
+-- as a stranger
+select count(*) from growth_months;      -- must still be 0
+```
+
 ## Changing the email provider
 
 Only `send()` in `functions/notify/index.ts` knows about Resend — it is one
