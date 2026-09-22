@@ -1064,23 +1064,19 @@ body {
 }
 
 .sidebar-brand-icon {
-  font-size: 26px;
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   width: 44px;
   height: 44px;
   border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+  display: block;
+  object-fit: cover;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35);
 }
 
 .sidebar-brand-title {
   font-family: 'Outfit', sans-serif;
-  font-weight: 900;
-  font-size: 20px;
-  letter-spacing: -0.5px;
+  font-weight: 800;
+  font-size: 19px;
+  letter-spacing: .12em;
   color: #fff;
 }
 
@@ -1471,9 +1467,9 @@ body {
 
 .sidebar-brand-title {
   font-family: 'Outfit', sans-serif;
-  font-weight: 900;
-  font-size: 20px;
-  letter-spacing: -0.5px;
+  font-weight: 800;
+  font-size: 19px;
+  letter-spacing: .12em;
   color: #fff;
 }
 
@@ -3745,9 +3741,10 @@ h1,h2,h3,h4,.sidebar-brand-title,.stat-val,.hero h1{ font-family:Inter,-apple-sy
 #gateScreen .gate-card{ width:min(440px,100%); display:flex; flex-direction:column; gap:14px; padding:30px 28px 26px;
   border-radius:24px; background:var(--t-panel,#111114); border:1px solid var(--t-line,#26262e); box-shadow:0 30px 70px -30px rgba(0,0,0,.9); }
 #gateScreen .gate-brand{ display:flex; align-items:center; gap:12px; }
-#gateScreen .gate-mark{ width:46px; height:46px; border-radius:14px; display:grid; place-items:center; font-size:23px;
-  background:linear-gradient(135deg,var(--accent),var(--accent-2)); }
-#gateScreen h1{ margin:0; font-size:23px; font-weight:900; letter-spacing:-.5px; color:var(--t-text,#f4f4f6); }
+#gateScreen .gate-mark{ width:46px; height:46px; border-radius:14px; display:block; object-fit:cover;
+  box-shadow:0 6px 18px rgba(0,0,0,.45); }
+#gateScreen h1{ margin:0; font-size:22px; font-weight:800; letter-spacing:.13em; color:var(--t-text,#f4f4f6); }
+#gateScreen h1 b, .sidebar-brand-title b{ font-weight:800; color:var(--accent); }
 #gateScreen .gate-sub{ font-size:13px; color:var(--t-muted,#8d8d99); margin:0; }
 #gateScreen .gate-lead{ font-size:14.5px; color:var(--t-text,#f4f4f6); margin:6px 0 2px; line-height:1.5; }
 #gateScreen .action{ width:100%; justify-content:center; }
@@ -4194,9 +4191,9 @@ body.theme-sportscar .hero::after {
 <div id="gateScreen">
   <div class="gate-card">
     <div class="gate-brand">
-      <span class="gate-mark" aria-hidden="true">⚡</span>
+      <img class="gate-mark" src="assets/icons/icon-192.png" alt="" width="46" height="46">
       <div>
-        <h1>UNPROMPTED</h1>
+        <h1><b>UN</b>PROMPTED</h1>
         <p class="gate-sub">Daily growth &amp; routine tracker</p>
       </div>
     </div>
@@ -4253,9 +4250,9 @@ body.theme-sportscar .hero::after {
 <div id="appSidebar">
   <div>
     <div class="sidebar-brand">
-      <div class="sidebar-brand-icon">👑</div>
+      <img class="sidebar-brand-icon" src="assets/icons/icon-192.png" alt="" width="44" height="44">
       <div>
-        <div class="sidebar-brand-title">UNPROMPTED</div>
+        <div class="sidebar-brand-title"><b>UN</b>PROMPTED</div>
         <div class="sidebar-brand-sub">Grow Today. Greater Tomorrow.</div>
       </div>
     </div>

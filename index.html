@@ -83,8 +83,10 @@
   /* ---------- nav ---------- */
   .nav{ position:sticky; top:0; z-index:30; background:color-mix(in srgb, var(--paper) 88%, transparent); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-bottom:1px solid var(--rule); }
   .nav .wrap{ display:flex; align-items:center; gap:24px; min-height:68px; }
-  .brand{ display:flex; align-items:center; gap:10px; text-decoration:none; font-family:var(--display); font-weight:800; font-size:19px; letter-spacing:-.02em; }
-  .brand-mark{ width:34px; height:34px; border-radius:10px; background:var(--ink); color:var(--paper); display:grid; place-items:center; font-size:18px; box-shadow:3px 3px 0 var(--margin); }
+  .brand{ display:flex; align-items:center; gap:11px; text-decoration:none; font-family:var(--display); font-weight:800; font-size:18px; letter-spacing:0; }
+  .brand-mark{ width:34px; height:34px; border-radius:10px; display:block; object-fit:cover; box-shadow:3px 3px 0 var(--margin); }
+  .brand-word{ letter-spacing:.11em; }
+  .brand-word b{ font-weight:800; color:var(--margin); }
   .brand small{ font-family:var(--body); font-weight:400; font-size:14px; color:var(--ink-soft); letter-spacing:0; }
   .nav-links{ display:flex; gap:22px; margin-left:auto; font-size:15.5px; }
   .nav-links a{ text-decoration:none; color:var(--ink-soft); }
@@ -474,7 +476,7 @@
 
 <header class="nav">
   <div class="wrap">
-    <a class="brand" href="#top" aria-label="Unprompted home"><span class="brand-mark" aria-hidden="true">⚡</span>UNPROMPTED <small>Growth Tracker</small></a>
+    <a class="brand" href="#top" aria-label="Unprompted home"><img class="brand-mark" src="assets/icons/icon-192.png" alt="" width="34" height="34"><span class="brand-word"><b>UN</b>PROMPTED</span> <small>Growth Tracker</small></a>
     <nav class="nav-links" aria-label="Main">
       <a href="#how">How it works</a>
       <a href="#demo">Demo</a>
@@ -912,7 +914,7 @@
 
 <footer>
   <div class="wrap">
-    <span class="brand" style="font-size:16px"><span class="brand-mark" aria-hidden="true" style="width:28px;height:28px;font-size:15px">⚡</span>UNPROMPTED <small style="font-weight:400; color:var(--ink-soft); font-size:13px;">by MVB</small></span>
+    <span class="brand" style="font-size:16px"><img class="brand-mark" src="assets/icons/icon-192.png" alt="" width="28" height="28" style="width:28px;height:28px"><span class="brand-word"><b>UN</b>PROMPTED</span> <small style="font-weight:400; color:var(--ink-soft); font-size:13px;">by MVB</small></span>
     <span>© <span id="year">2026</span></span>
     <nav aria-label="Footer">
       <a href="#how">How it works</a>
