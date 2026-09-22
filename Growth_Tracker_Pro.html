@@ -3868,6 +3868,10 @@ body.demo-on #appSidebar{ top:var(--demo-bar-h,46px) !important; height:calc(100
 #avatarBuddyImg.ms-mvb, #heroAvatar.ms-mvb{ filter:drop-shadow(0 0 12px rgba(255,199,60,.9)) drop-shadow(0 4px 14px rgba(0,0,0,.5)); }
 .ms-mvb-host::after{ content:'🏆'; position:absolute; right:6%; bottom:6%; font-size:26px;
   filter:drop-shadow(0 2px 6px rgba(0,0,0,.6)); pointer-events:none; }
+/* the icon sitting in the hero heading */
+.hero-mark{ width:34px; height:34px; border-radius:9px; vertical-align:-6px; display:inline-block;
+  box-shadow:0 3px 10px rgba(0,0,0,.45); }
+@media (max-width:760px){ .hero-mark{ width:28px; height:28px; border-radius:8px; vertical-align:-5px; } }
 /* ===== MILESTONE MARKS =====
    Earned by doing the work, so they are deliberately different from anything
    the store sells: movement and light rather than a static ring. */
@@ -4322,7 +4326,7 @@ body.theme-sportscar .hero::after {
   <div id="appTopHeader">
     <div style="display:flex; align-items:center; gap:12px;">
       <div style="font-family:'Outfit', sans-serif; font-weight:900; font-size:18px; color:#fff; display:flex; align-items:center; gap:8px;">
-        <span style="color:#ef4444;">👑</span> UNPROMPTED
+        <img src="assets/icons/icon-192.png" alt="" width="26" height="26" style="width:26px; height:26px; border-radius:8px; display:block;"> <span style="letter-spacing:.1em;"><b style="color:var(--accent,#ef4444);">UN</b>PROMPTED</span>
       </div>
       <label class="top-search-box">
         <span>🔍</span>
@@ -4365,7 +4369,7 @@ body.theme-sportscar .hero::after {
     <div style="display:flex; justify-content:space-between; align-items:flex-start; position:relative; z-index:2;">
       <div class="hero-text-block" style="max-width:620px;">
         <div class="hero-subtitle-tag">REPEAT • LEARN • IMPROVE • GROW</div>
-        <h1>⚡ <span id="heroOwnerName">Your child's</span> Daily <span class="highlight">Growth & Routine</span> Tracker</h1>
+        <h1><img class="hero-mark" src="assets/icons/icon-192.png" alt="" width="34" height="34"> <span id="heroOwnerName">Your child's</span> Daily <span class="highlight">Growth &amp; Routine</span> Tracker</h1>
         <p id="heroSchoolLine" style="font-size:14px; color:rgba(255,255,255,0.7); margin:0 0 16px;">School Prep • Chores &amp; Homework</p>
         <div class="synced-status-pill" id="syncPill" data-state="local" role="status" aria-live="polite">
           <span class="dot"></span>
