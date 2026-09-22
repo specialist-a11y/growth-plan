@@ -4947,6 +4947,22 @@ body.theme-sportscar .hero::after {
         <div id="taskImportPreview"></div>
       </div>
 
+      <h3 id="kidsSection" style="font-size:16px; font-weight:800; margin:22px 0 6px;">👧👦 Children <span class="pro-chip">PRO</span></h3>
+      <div class="meta" style="margin-bottom:10px;">Up to four, each with their own routine, points and rewards. Switching child reloads the tracker for them.</div>
+      <div id="kidsBox" class="hh-box">
+        <div id="kidsNeedsAccount" class="meta" hidden>
+          More than one child needs an account, so each child's progress has somewhere to live.
+          <button class="action ghost" style="margin-top:8px;" onclick="openSettings()">🔑 Sign in or create an account</button>
+        </div>
+        <div id="kidsList" class="hh-list"></div>
+        <div class="hh-join-row">
+          <input id="newKidName" type="text" maxlength="40" placeholder="Their name" autocomplete="off"
+                 style="border:1px solid var(--border); border-radius:12px; padding:10px;">
+          <button class="action primary" id="addKidBtn" onclick="addChild()">＋ Add a child</button>
+        </div>
+        <div id="kidsMsg" class="meta" style="margin-top:8px;"></div>
+      </div>
+
       <h3 id="pfSection" style="font-size:16px; font-weight:800; margin:22px 0 6px;">👦 Child &amp; Country</h3>
       <div class="meta" style="margin-bottom:10px;">The name shown in the app, and the country whose public holidays the calendar should follow.</div>
       <div id="pfGrid" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:10px;">
@@ -6236,6 +6252,12 @@ function emailTakenMsg(email) {
     + 'Adding a second child? Open the Parent Dashboard and choose <b>Add another child</b>.';
 }
 function openFamilyPlan() {
+  // children live on the account now, so this is a dashboard job
+  if (cloudSession()) {
+    closeSettings();
+    parentFocusSection = 'kidsSection';
+    return openParentDashboard();
+  }
   // record the ask, so there is a record of who wants the family plan
   const cfg = Object.assign({}, parentConfig() || {});
   const fp = Object.assign({ count: 0 }, cfg.familyPlanInterest || {});
@@ -6488,6 +6510,58 @@ async function resolveHousehold() {
   }
 }
 
+/* ===== MORE THAN ONE CHILD =====
+   A child is a row in `children` and a storage space on the device. The first
+   child keeps the storage space the account already used, so an existing
+   family notices nothing; the second onwards get their own. */
+const ACTIVE_CHILD_KEY = 'gt-active-child';
+let childrenList = [];            // as the server has them, in order
+let activeChildId = null;
+
+function rememberedChildId() {
+  try { return gtRawGet.call(window.localStorage, ACTIVE_CHILD_KEY) || null; } catch (e) { return null; }
+}
+function rememberChildId(id) {
+  try { id ? gtRawSet.call(window.localStorage, ACTIVE_CHILD_KEY, id) : gtRawRemove.call(window.localStorage, ACTIVE_CHILD_KEY); } catch (e) {}
+}
+function activeChild() { return childrenList.find(c => c.id === activeChildId) || null; }
+function childCount() { return childrenList.filter(c => !c.archived_at).length; }
+function canAddChild() { return childCount() < 4; }
+
+/* The first child stays in the account's original storage space; the others
+   get one of their own. That way nobody's existing data moves. */
+function nsIdForChild(childId) {
+  const owner = dataOwnerId();
+  if (!owner || !childId) return 'user:' + owner;
+  const first = childrenList[0];
+  return (first && first.id === childId) ? 'user:' + owner : 'user:' + owner + ':' + childId;
+}
+
+async function loadChildren() {
+  childrenList = []; activeChildId = null;
+  if (!cloudSession()) return;
+  try {
+    const { data, error } = await sb.from('children').select('id,name,sort,created_at,archived_at')
+      .eq('owner_id', dataOwnerId()).order('sort').order('created_at');
+    if (error) throw error;
+    childrenList = (data || []).filter(c => !c.archived_at);
+    if (!childrenList.length) {
+      // a new account, or one that predates this: give it its first child
+      const name = (localStorage.getItem(childNameKey) || '').trim();
+      const { data: made, error: err2 } = await sb.from('children')
+        .insert({ owner_id: dataOwnerId(), name, sort: 0 }).select().single();
+      if (err2) throw err2;
+      childrenList = [made];
+    }
+    const wanted = rememberedChildId();
+    activeChildId = (childrenList.find(c => c.id === wanted) || childrenList[0]).id;
+    rememberChildId(activeChildId);
+  } catch (e) {
+    // the children table may not be there yet: carry on as a one-child account
+    console.info('Children not loaded:', e.message);
+  }
+}
+
 function cloudSession() {
   return !!(sb && session && session.user && session.user.id && !String(session.user.email || '').includes('(Local Profile)'));
 }
@@ -6538,22 +6612,22 @@ async function pushChanges() {
   if (!hasPendingSync(st)) return renderSyncStatus();
   syncRunning = true;
   renderSyncStatus('pending');
-  const uid = dataOwnerId(), now = new Date().toISOString();
+  const uid = dataOwnerId(), cid = activeChildId, now = new Date().toISOString();
   const rows = [], sentMonths = [];
   let sentSettings = null;
   Object.keys(st.months).forEach(m => {
     const d = loadLocal(m);
     sentMonths.push([m, JSON.stringify(d)]);
-    rows.push({ user_id: uid, month_key: 'teen-' + m, tracker_data: d.tracker || {}, intentions: d.intentions || {}, books: d.novelLog || {}, updated_at: now });
+    rows.push({ user_id: uid, child_id: cid, month_key: 'teen-' + m, tracker_data: d.tracker || {}, intentions: d.intentions || {}, books: d.novelLog || {}, updated_at: now });
   });
   if (st.settings) {
     const bundle = settingsBundle();
     sentSettings = JSON.stringify(bundle);
-    rows.push({ user_id: uid, month_key: SYNC_SETTINGS_ROW, tracker_data: bundle, intentions: {}, books: {}, updated_at: now });
+    rows.push({ user_id: uid, child_id: cid, month_key: SYNC_SETTINGS_ROW, tracker_data: bundle, intentions: {}, books: {}, updated_at: now });
   }
   let ok = true;
   try {
-    const { error } = await sb.from('growth_months').upsert(rows, { onConflict: 'user_id,month_key' });
+    const { error } = await sb.from('growth_months').upsert(rows, { onConflict: activeChildId ? 'user_id,child_id,month_key' : 'user_id,month_key' });
     if (error) ok = false;
   } catch (e) { ok = false; }
   syncRunning = false;
@@ -6581,9 +6655,11 @@ async function pullFromCloud() {
   renderSyncStatus('pending');
   let rows;
   try {
-    const { data, error } = await sb.from('growth_months')
+    let q = sb.from('growth_months')
       .select('month_key,tracker_data,intentions,books,updated_at')
       .eq('user_id', dataOwnerId());
+    if (activeChildId) q = q.eq('child_id', activeChildId);   // this child's months, not the family's
+    const { data, error } = await q;
     if (error) throw error;
     rows = data || [];
   } catch (e) { scheduleRetry(); return renderSyncStatus('error'); }
@@ -6895,6 +6971,7 @@ async function saveRecoveredPassword() {
 
 async function loadCloud() {
   await resolveHousehold();   // whose rows to pull, before pulling any
+  await loadChildren();       // and which child's
   return pullFromCloud();     // the old single-month loader below is no longer reached
   if (!sb || !session) return;
   setCloud('Loading cloud data…');
@@ -10124,6 +10201,85 @@ async function changeAccountPassword() {
   document.getElementById('secNewPassword2').value = '';
   secMsg('🟢 Password changed. Use it next time you sign in.', true);
 }
+/* ===== THE CHILDREN, ON SCREEN ===== */
+function kidsMsg(text, good) {
+  const el = document.getElementById('kidsMsg');
+  if (el) el.innerHTML = text ? (good ? '🟢 ' : '⚠️ ') + text : '';
+}
+
+function renderChildren() {
+  const box = document.getElementById('kidsBox');
+  if (!box) return;
+  const on = cloudSession();
+  const needs = document.getElementById('kidsNeedsAccount');
+  if (needs) needs.hidden = on;
+  const list = document.getElementById('kidsList');
+  const add = document.getElementById('addKidBtn');
+  const nameBox = document.getElementById('newKidName');
+  if (!on) {
+    if (list) list.innerHTML = '';
+    if (add) add.hidden = true;
+    if (nameBox) nameBox.hidden = true;
+    return;
+  }
+  if (add) { add.hidden = false; add.disabled = !canAddChild(); }
+  if (nameBox) nameBox.hidden = false;
+  if (!list) return;
+  list.innerHTML = childrenList.map((c, i) => {
+    const here = c.id === activeChildId;
+    const label = (c.name || '').trim() || (i === 0 ? 'First child' : 'Child ' + (i + 1));
+    return `<div class="hh-row">
+      <span>${here ? '🟢' : '👤'}</span>
+      <span><b>${escapeHTML(label)}</b>${here ? '<br><span class="meta">the one you are looking at</span>' : ''}</span>
+      ${here ? '' : `<button class="action ghost tt-mini" onclick="switchChild('${c.id}')">Open</button>`}
+      ${childrenList.length > 1 && !here ? `<button class="action ghost tt-mini" onclick="removeChild('${c.id}')">Remove</button>` : ''}
+    </div>`;
+  }).join('') || '<div class="meta">No children yet.</div>';
+  if (!canAddChild()) kidsMsg('Four is the most on one account.');
+}
+
+function switchChild(id) {
+  const child = childrenList.find(c => c.id === id);
+  if (!child) return;
+  rememberChildId(id);
+  // each child has their own storage space, so the tracker reloads into theirs
+  const label = (child.name || '').trim();
+  if (!gtSwitchAccount(nsIdForChild(id), '🟢 Now showing ' + escapeHTML(label || 'the other child'))) {
+    location.reload();
+  }
+}
+
+async function addChild() {
+  const input = document.getElementById('newKidName');
+  const name = ((input || {}).value || '').trim();
+  if (!name) return kidsMsg('Give the child a name first.');
+  if (!canAddChild()) return kidsMsg('Four is the most on one account.');
+  kidsMsg('');
+  try {
+    const { data, error } = await sb.from('children')
+      .insert({ owner_id: dataOwnerId(), name, sort: childrenList.length }).select().single();
+    if (error) throw error;
+    childrenList.push(data);
+    if (input) input.value = '';
+    renderChildren();
+    kidsMsg('Added. Open them to set up their routine.', true);
+  } catch (e) { kidsMsg('Could not add them: ' + escapeHTML(e.message)); }
+}
+
+async function removeChild(id) {
+  const child = childrenList.find(c => c.id === id);
+  if (!child) return;
+  const label = (child.name || '').trim() || 'this child';
+  if (!confirm('Remove ' + label + '? Everything of theirs — routine, points, rewards and history — is deleted, and it cannot be undone.')) return;
+  try {
+    const { error } = await sb.from('children').delete().eq('id', id).eq('owner_id', dataOwnerId());
+    if (error) throw error;
+    childrenList = childrenList.filter(c => c.id !== id);
+    renderChildren();
+    kidsMsg('Removed.', true);
+  } catch (e) { kidsMsg('Could not remove them: ' + escapeHTML(e.message)); }
+}
+
 /* ===== THE SECOND PARENT, ON SCREEN ===== */
 function hhMsg(text, good) {
   const el = document.getElementById('hhMsg');
@@ -10421,6 +10577,7 @@ function renderParentDashboard() {
   renderParentSecurity();
   loadEmailPrefs();
   renderHousehold();
+  renderChildren();
   const focus = parentFocusSection;
   parentFocusSection = null;
   const target = focus ? document.getElementById(focus) : null;

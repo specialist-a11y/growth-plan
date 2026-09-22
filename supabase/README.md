@@ -114,6 +114,34 @@ select count(*) from growth_months;      -- sees the family's rows
 select count(*) from growth_months;      -- must still be 0
 ```
 
+## Up to four children
+
+`03-children.sql`. **Run it, then deploy the app, in that order.** Between the
+two there is a short window where browsers cannot sync: the app upserts against
+a unique index this script replaces. Nothing is lost — the tracker keeps
+working on the device and retries — but keep the gap to minutes.
+
+- `children` — one row per child, with `archived_at` ready for the rule that
+  children two to four are kept 30 days after a plan drops back to one
+- `growth_months.child_id` — every month row now belongs to a child
+- The four-child limit is a **trigger**, not a UI check: a rule that only
+  exists in the browser is a suggestion
+
+The script gives every account that already has data one child, named from the
+tracker's own settings so nobody meets "Child 1" after months of use, and files
+their existing rows under them.
+
+On the device, the first child keeps the storage space the account already
+used, so an existing family notices nothing; children two onwards get their
+own. Switching child reloads the tracker into theirs.
+
+Check before deploying:
+
+```sql
+select count(*) from children;                              -- one per account with data
+select count(*) from growth_months where child_id is null;  -- must be 0
+```
+
 ## Changing the email provider
 
 Only `send()` in `functions/notify/index.ts` knows about Resend — it is one
