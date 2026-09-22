@@ -3844,6 +3844,15 @@ body.demo-on #appSidebar{ top:var(--demo-bar-h,46px) !important; height:calc(100
   .install-bar{ bottom:calc(74px + env(safe-area-inset-bottom,0px)); gap:8px; }
   .install-bar .action{ flex:1 1 auto; }
 }
+/* which emails a parent wants */
+.em-box{ border:1px solid var(--t-line,#26262e); border-radius:14px; padding:6px 14px 12px; background:var(--t-panel-2,#1b1b21); }
+.em-row{ display:grid; grid-template-columns:22px minmax(0,1fr); gap:11px; align-items:start; padding:12px 0;
+  border-bottom:1px solid var(--t-line,#26262e); cursor:pointer; }
+.em-row:last-of-type{ border-bottom:0; }
+.em-row input{ width:19px; height:19px; margin:2px 0 0; accent-color:var(--accent); cursor:pointer; }
+.em-row b{ display:block; font-size:14px; }
+.em-row small{ display:block; font-size:12.5px; color:var(--t-muted,#8d8d99); margin-top:2px; line-height:1.5; }
+.em-foot{ display:flex; justify-content:space-between; align-items:center; gap:10px; padding-top:10px; }
 /* the panel that explains the marks */
 .ms-card{ width:min(520px,100%); }
 .ms-list{ display:flex; flex-direction:column; gap:10px; margin:4px 0 0; }
@@ -4918,6 +4927,33 @@ body.theme-sportscar .hero::after {
         <button class="action ghost" onclick="qRestoreDefaults()">↻ Restore Default Quotes</button>
       </div>
       <div id="qwNow" class="qw-now"></div>
+
+      <h3 id="emailSection" style="font-size:16px; font-weight:800; margin:22px 0 6px;">✉️ Email me about</h3>
+      <div class="meta" style="margin-bottom:10px;">Sent to the address you signed in with. Nothing here is sent to your child.</div>
+      <div id="emailPrefs" class="em-box">
+        <div id="emailNeedsAccount" class="meta" hidden>
+          These need an account, so the tracker knows where to write to.
+          <button class="action ghost" style="margin-top:8px;" onclick="openSettings()">🔑 Sign in or create an account</button>
+        </div>
+        <div id="emailControls" hidden>
+          <label class="em-row">
+            <input type="checkbox" id="emWeekly" onchange="saveEmailPrefs()">
+            <span><b>A weekly report</b><small>Monday morning: last week's completion, perfect days, homework and anything waiting.</small></span>
+          </label>
+          <label class="em-row">
+            <input type="checkbox" id="emRewards" onchange="saveEmailPrefs()">
+            <span><b>When a reward is claimed</b><small>So a claim does not sit waiting because nobody opened the app.</small></span>
+          </label>
+          <label class="em-row">
+            <input type="checkbox" id="emDeadlines" onchange="saveEmailPrefs()">
+            <span><b>When a deadline is missed</b><small>The morning after, listing what yesterday's deadlines caught. Off by default — it can nag.</small></span>
+          </label>
+          <div class="em-foot">
+            <span id="emailTo" class="meta"></span>
+            <span id="emailSaved" class="meta" hidden>Saved</span>
+          </div>
+        </div>
+      </div>
 
       <h3 id="secSection" style="font-size:16px; font-weight:800; margin:22px 0 6px;">🔐 Account &amp; Security</h3>
       <div id="secPinNotice" class="notice warn" style="display:none; margin-bottom:10px;"></div>
@@ -9971,6 +10007,58 @@ async function changeAccountPassword() {
   document.getElementById('secNewPassword2').value = '';
   secMsg('🟢 Password changed. Use it next time you sign in.', true);
 }
+/* ===== WHICH EMAILS A PARENT WANTS =====
+   Kept in Supabase rather than on the device: the thing that sends the emails
+   is a scheduled job on the server, and it cannot read a phone's storage. */
+let emailPrefsRow = null;
+
+async function loadEmailPrefs() {
+  const box = document.getElementById('emailPrefs');
+  if (!box) return;
+  const needs = document.getElementById('emailNeedsAccount');
+  const controls = document.getElementById('emailControls');
+  const on = cloudSession();
+  if (needs) needs.hidden = on;
+  if (controls) controls.hidden = !on;
+  if (!on) return;
+
+  const to = document.getElementById('emailTo');
+  if (to) to.textContent = 'Sent to ' + (session.user.email || 'your account address');
+  try {
+    const { data, error } = await sb.from('email_prefs').select('*').eq('user_id', session.user.id).maybeSingle();
+    if (error) throw error;
+    emailPrefsRow = data || { weekly: true, rewards: true, deadlines: false };
+  } catch (e) {
+    // the table may not be there yet; show the defaults rather than an error
+    console.info('Email preferences unavailable:', e.message);
+    emailPrefsRow = { weekly: true, rewards: true, deadlines: false };
+  }
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.checked = !!v; };
+  set('emWeekly', emailPrefsRow.weekly);
+  set('emRewards', emailPrefsRow.rewards);
+  set('emDeadlines', emailPrefsRow.deadlines);
+}
+
+async function saveEmailPrefs() {
+  if (!cloudSession()) return;
+  const val = id => !!(document.getElementById(id) || {}).checked;
+  const row = {
+    user_id: session.user.id,
+    weekly: val('emWeekly'), rewards: val('emRewards'), deadlines: val('emDeadlines'),
+    timezone: (Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'),
+    updated_at: new Date().toISOString()
+  };
+  try {
+    const { error } = await sb.from('email_prefs').upsert(row, { onConflict: 'user_id' });
+    if (error) throw error;
+    emailPrefsRow = row;
+    const saved = document.getElementById('emailSaved');
+    if (saved) { saved.hidden = false; clearTimeout(saveEmailPrefs.t); saveEmailPrefs.t = setTimeout(() => { saved.hidden = true; }, 2000); }
+  } catch (e) {
+    parentMsg('&#9888;&#65039; Could not save your email choices: ' + escapeHTML(e.message), false);
+  }
+}
+
 function renderParentSecurity() {
   const cfg = parentConfig() || {};
   const notice = document.getElementById('secPinNotice');
@@ -10109,6 +10197,7 @@ function renderParentDashboard() {
   renderParentTimetable();
   renderParentQuotes();
   renderParentSecurity();
+  loadEmailPrefs();
   const focus = parentFocusSection;
   parentFocusSection = null;
   const target = focus ? document.getElementById(focus) : null;
