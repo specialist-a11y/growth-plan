@@ -1,9 +1,10 @@
 -- Up to four children on one account.
 --
--- ORDER MATTERS. Run this, then deploy the app, in that order. Between the two
--- there is a short window where the app in people's browsers cannot sync: it
--- upserts against a unique index this script replaces. Nothing is lost — the
--- tracker keeps working on the device and retries — but keep the gap short.
+-- The app that uses this is already deployed, so the only care needed is
+-- timing: a browser with the tracker ALREADY OPEN is holding no child id and
+-- upserts against the unique index this script replaces, so it cannot sync
+-- until it is reloaded. Nothing is lost — the tracker keeps working on the
+-- device and retries — but run this when nobody is mid-routine, not at 7am.
 --
 -- Run after 02-household.sql.
 
@@ -64,8 +65,10 @@ declare
   v_name  text;
 begin
   for r in select distinct user_id from public.growth_months where child_id is null loop
+    -- the settings bundle holds localStorage values, so a name may arrive
+    -- still wearing its JSON quotes
     select coalesce(
-             nullif(btrim(both '"' from (tracker_data ->> 'teen-child-name')), ''),
+             nullif(btrim(tracker_data ->> 'teen-child-name', '"'), ''),
              '')
       into v_name
       from public.growth_months
@@ -91,7 +94,7 @@ alter table public.growth_months drop constraint if exists growth_months_user_id
 drop index if exists public.growth_months_user_id_month_key_key;
 
 -- ---------------------------------------------------------------- checking it
--- After running this, and before deploying:
+-- After running this:
 --   select count(*) from children;                                  -- one per account with data
 --   select count(*) from growth_months where child_id is null;      -- must be 0
 --   select name, (select count(*) from growth_months g where g.child_id = c.id) as rows
