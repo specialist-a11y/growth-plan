@@ -57,5 +57,14 @@ CREATE TRIGGER update_growth_months_modtime
     FOR EACH ROW
     EXECUTE FUNCTION update_modified_column();
 
--- Optional: Add real-time sync table publication
-ALTER PUBLICATION supabase_realtime ADD TABLE public.growth_months;
+-- Optional: Add real-time sync table publication.
+-- Adding it twice is an error, and the publication does not exist at all
+-- outside Supabase, so both cases are swallowed — this has to be safe to
+-- re-run like everything else here.
+do $$
+begin
+  alter publication supabase_realtime add table public.growth_months;
+exception
+  when duplicate_object then null;   -- already published
+  when undefined_object then null;   -- no such publication (not on Supabase)
+end $$;
