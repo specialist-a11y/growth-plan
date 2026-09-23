@@ -12130,14 +12130,39 @@ function nextTourStep() {
   if (!ring) return;
   if (!target) { ring.hidden = true; return; }
   target.scrollIntoView({ block: 'center', behavior: 'smooth' });
-  setTimeout(() => {
+
+  /* Wait for the smooth scroll to actually stop before measuring. A fixed
+     delay guessed wrong and drew the ring where the target used to be —
+     nearly 300px adrift on the calendar step. Poll until the position holds
+     still, then give up after a second in case the scroll never settles. */
+  const began = Date.now();
+  let last = null;
+  const place = () => {
     const r = target.getBoundingClientRect();
+    const waited = Date.now() - began;
+    // Keep looking for at least 300ms first: a smooth scroll has usually not
+    // started moving within the first frame or two, and "has not moved yet"
+    // reads exactly like "has finished moving".
+    const moving = last === null || Math.abs(last - r.top) > 0.5;
+    if (waited < 1200 && (waited < 300 || moving)) {
+      last = r.top;
+      return requestAnimationFrame(() => setTimeout(place, 40));
+    }
+    /* Ring only what is on screen. The calendar is taller than a phone, so
+       ringing the whole thing put most of the highlight past the bottom edge
+       where nobody can see it. */
+    const pad = 6, edge = 6;
+    const l = Math.max(edge, r.left - pad);
+    const t = Math.max(edge, r.top - pad);
+    const right  = Math.min(window.innerWidth  - edge, r.right  + pad);
+    const bottom = Math.min(window.innerHeight - edge, r.bottom + pad);
     ring.hidden = false;
-    ring.style.left = Math.max(6, r.left - 6) + 'px';
-    ring.style.top = Math.max(6, r.top - 6) + 'px';
-    ring.style.width = Math.min(window.innerWidth - 12, r.width + 12) + 'px';
-    ring.style.height = Math.min(window.innerHeight - 12, r.height + 12) + 'px';
-  }, 260);
+    ring.style.left = l + 'px';
+    ring.style.top = t + 'px';
+    ring.style.width = Math.max(0, right - l) + 'px';
+    ring.style.height = Math.max(0, bottom - t) + 'px';
+  };
+  place();
 }
 
 function skipTour() { endTour(); }
