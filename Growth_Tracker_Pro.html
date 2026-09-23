@@ -3832,7 +3832,7 @@ body.demo-on #appSidebar{ top:var(--demo-bar-h,46px) !important; height:calc(100
 .ix-close{ position:absolute; top:8px; right:10px; border:0; background:none; color:var(--t-muted,#8d8d99);
   font-size:19px; line-height:1; padding:6px; cursor:pointer; }
 /* the "add to your phone" invitation */
-.install-bar{ position:fixed; left:50%; transform:translateX(-50%); bottom:18px; z-index:79;
+.install-bar{ position:fixed; left:50%; transform:translateX(-50%); bottom:18px; z-index:79; max-height:40vh; overflow:auto;
   display:flex; align-items:center; gap:12px; flex-wrap:wrap; max-width:min(560px,94vw);
   padding:13px 16px; border-radius:18px; border:1px solid var(--t-line,#26262e);
   background:linear-gradient(135deg,#16161d,#1d1d26); box-shadow:0 18px 44px rgba(0,0,0,.55); }
@@ -3841,7 +3841,10 @@ body.demo-on #appSidebar{ top:var(--demo-bar-h,46px) !important; height:calc(100
 .install-copy b{ font-size:14px; color:#fff; }
 .install-copy .meta{ font-size:12px; margin-top:2px; }
 @media (max-width:620px){
+  /* it sits above the nav bar, and the page gets room so it never covers the
+     last task on the list */
   .install-bar{ bottom:calc(74px + env(safe-area-inset-bottom,0px)); gap:8px; }
+  body.install-open .panel{ padding-bottom:150px; }
   .install-bar .action{ flex:1 1 auto; }
 }
 /* the month grid: a calendar, not a stack of cards */
@@ -4036,6 +4039,52 @@ body.demo-on #appSidebar{ top:var(--demo-bar-h,46px) !important; height:calc(100
 .tour-acts{ display:flex; gap:10px; justify-content:flex-end; margin-top:14px; }
 @media (max-width:760px){ .tour-card{ bottom:calc(84px + env(safe-area-inset-bottom,0px)); } }
 @media (prefers-reduced-motion:reduce){ .tour-ring{ transition:none; } }
+/* ===== THE DAY IN PARTS =====
+   Who it is, how far along, and which part of the day — then only that part's
+   tasks. Our own colours: the structure is what is borrowed, not the skin. */
+.rt-top{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+/* .section sets its padding with !important elsewhere, so this has to out-rank
+   it rather than argue with it */
+#todayPanel .rt-daypick{ display:flex; align-items:center; gap:10px;
+  padding:9px 14px !important; margin-bottom:12px !important; }
+#todayPanel .rt-daypick label{ font-size:11.5px; font-weight:800; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--t-muted,#8d8d99); }
+#todayPanel .rt-daypick select{ flex:1; min-width:0; max-width:320px;
+  padding:7px 12px !important; min-height:0 !important; }
+.rt-face{ width:36px; height:36px; border-radius:50%; overflow:hidden; display:grid; place-items:center;
+  background:var(--t-panel-2,#1b1b21); border:1px solid var(--t-line,#26262e); font-size:18px; flex:none; }
+.rt-face img{ width:100%; height:100%; object-fit:cover; object-position:top center; display:block; }
+.rt-who{ font-size:17px; font-weight:800; color:var(--t-text,#f2f2f5); margin-right:auto; }
+.rt-chip{ font-size:12.5px; font-weight:800; padding:5px 11px; border-radius:99px;
+  background:var(--t-panel-2,#1b1b21); border:1px solid var(--t-line,#26262e); color:var(--t-text,#f2f2f5);
+  font-variant-numeric:tabular-nums; }
+.rt-chip.star{ border-color:rgba(255,199,60,.5); color:#ffc73c; }
+
+.rt-segs{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-bottom:18px; }
+.rt-seg{ display:flex; flex-direction:column; align-items:center; gap:3px; padding:10px 4px 8px;
+  border:1px solid var(--t-line,#26262e); border-radius:14px; background:var(--t-panel-2,#1b1b21);
+  color:var(--t-muted,#8d8d99); font:inherit; cursor:pointer; min-width:0; }
+.rt-seg-ico{ font-size:21px; line-height:1; filter:grayscale(.55); opacity:.75; }
+.rt-seg-name{ font-size:11px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+.rt-seg-count{ font-size:10.5px; font-variant-numeric:tabular-nums; opacity:.8; }
+.rt-seg.on{ border-color:var(--accent); background:rgba(var(--accent-rgb,255,45,45),.10); color:var(--t-text,#f2f2f5); }
+.rt-seg.on .rt-seg-ico{ filter:none; opacity:1; }
+.rt-seg.all-done .rt-seg-count{ color:#4CC585; }
+
+/* one part at a time */
+.rt-day[data-part-filter] .rt-part{ display:none; }
+.rt-day[data-part-filter="morning"]   .rt-part[data-part="morning"],
+.rt-day[data-part-filter="afternoon"] .rt-part[data-part="afternoon"],
+.rt-day[data-part-filter="evening"]   .rt-part[data-part="evening"],
+.rt-day[data-part-filter="chores"]    .rt-part[data-part="chores"]{ display:block; }
+/* the date is a label here, not a headline: the list is the point */
+.rt-day .rt-date{ font-size:15px !important; font-weight:700 !important; color:var(--t-muted,#8d8d99) !important; margin:0 !important; }
+@media (max-width:760px){
+  .rt-segs{ gap:6px; }
+  .rt-seg{ padding:9px 2px 7px; border-radius:12px; }
+  .rt-seg-name{ font-size:10px; }
+  .rt-who{ font-size:16px; }
+}
 /* character and themes, where a child will actually see them */
 .quick-row{ display:none; gap:10px; margin:0 0 16px; }
 .quick-btn{ flex:1 1 0; min-width:0; display:flex; align-items:center; gap:10px; text-align:left;
@@ -4640,9 +4689,9 @@ body.theme-sportscar .hero::after {
 
   <!-- Daily Tracker Panel -->
   <section id="todayPanel" class="panel">
-    <div class="section">
-      <h2>Select Day to Complete</h2>
-      <select id="daySelect" class="month" style="width: 100%; max-width: 320px;"></select>
+    <div class="section rt-daypick">
+      <label for="daySelect">Day</label>
+      <select id="daySelect" class="month"></select>
     </div>
     <div id="dailyEditor"></div>
   </section>
@@ -8017,6 +8066,58 @@ function setDeadline(g, which, v) {
   saveDeadlines(d);
 }
 
+/* ===== THE DAY IN PARTS =====
+   Twenty-two tasks in one column is a list of everything owed. Split into the
+   parts of a day, opening on the part it actually is, it becomes a handful of
+   things to do now. */
+const DAY_PARTS = [
+  { id: 'morning',   icon: '🌅', label: 'Morning',  cats: ['morning'] },
+  { id: 'afternoon', icon: '🏡', label: 'After school', cats: ['chores'] },
+  { id: 'evening',   icon: '🌙', label: 'Evening',  cats: ['evening'] },
+  { id: 'chores',    icon: '🧹', label: 'Chores',   cats: ['laundry', 'weekly', 'tidy'] }
+];
+let routinePart = null;
+
+function partNow() {
+  const h = new Date().getHours();
+  if (h < 12) return 'morning';
+  if (h < 17) return 'afternoon';
+  if (h < 21) return 'evening';
+  return 'evening';
+}
+function activePart() { return routinePart || partNow(); }
+function setRoutinePart(id) {
+  routinePart = id;
+  document.querySelectorAll('[data-part-filter]').forEach(box => {
+    box.setAttribute('data-part-filter', id);
+    box.querySelectorAll('.rt-seg').forEach(b => {
+      const on = b.dataset.seg === id;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', String(on));
+    });
+  });
+}
+
+/* what is done and what is asked for, for the strip at the top */
+function partCounts(day, part) {
+  const rec = getDay(day);
+  const dt = dateFor(day);
+  const isWeekend = dt.getDay() === 0 || dt.getDay() === 6;
+  const school = bbDayStatus(dt).school;
+  let done = 0, total = 0;
+  dailyTasks.forEach(t => {
+    if (part && part.cats.indexOf(t.cat) === -1) return;
+    if (t.schoolOnly && !school) return;
+    if (t.weekendOnly && !isWeekend) return;
+    total++;
+    if (rec.tasks[t.id]) done++;
+  });
+  if (!part || part.cats.indexOf('tidy') !== -1) {
+    ['floor', 'desk', 'bed', 'sweepMop'].forEach(k => { total++; if (rec.tidy && rec.tidy[k]) done++; });
+  }
+  return { done, total };
+}
+
 function editorHTML(day) {
   const rec = getDay(day);
   const dt = dateFor(day);
@@ -8091,10 +8192,37 @@ function editorHTML(day) {
 
   const timetableHelper = renderTimetableHelper(dayOfWeek, dt);
 
+  const whole = partCounts(day, null);
+  const av = typeof currentAvatar === 'function' ? currentAvatar() : null;
+  const who = (typeof childDisplayName === 'function' && childDisplayName()) || '';
+  const points = typeof pointsBalance === 'function' ? pointsBalance() : 0;
+  const part = activePart();
+
+  const topStrip = `
+    <div class="rt-top">
+      <span class="rt-face">${av ? `<img src="${av.face}" alt="">` : '🧍'}</span>
+      <b class="rt-who">${escapeHTML(who || 'Today')}</b>
+      <span class="rt-chip">✓ ${whole.done}/${whole.total}</span>
+      <span class="rt-chip star">⭐ ${points.toLocaleString()}</span>
+    </div>
+    <div class="rt-segs" role="group" aria-label="Part of the day">
+      ${DAY_PARTS.map(dp => {
+        const c = partCounts(day, dp);
+        const all = c.total > 0 && c.done === c.total;
+        return `<button type="button" class="rt-seg${dp.id === part ? ' on' : ''}${all ? ' all-done' : ''}"
+          data-seg="${dp.id}" aria-pressed="${dp.id === part}" onclick="setRoutinePart('${dp.id}')">
+          <span class="rt-seg-ico">${all ? '✅' : dp.icon}</span>
+          <span class="rt-seg-name">${dp.label}</span>
+          <span class="rt-seg-count">${c.done}/${c.total}</span>
+        </button>`;
+      }).join('')}
+    </div>`;
+
   return `
-    <div class="section">
+    <div class="section rt-day" data-part-filter="${part}">
+      ${topStrip}
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px">
-        <h2>
+        <h2 class="rt-date">
           ${dt.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
           ${isWeekend ? '<span style="font-size:13px; background:#fef3c7; color:#92400e; padding:4px 10px; border-radius:12px; font-weight:800; margin-left:8px;">🗓️ Weekend Chores & Deep Clean</span>' : ''}
         </h2>
@@ -8103,12 +8231,15 @@ function editorHTML(day) {
       </div>
 
       ${dlBanner}
-      ${morningHTML}
+      <div class="rt-part" data-part="morning">${morningHTML}</div>
 
-      <!-- Class Timetable Helper Card -->
-      ${timetableHelper}
+      <div class="rt-part" data-part="afternoon">
+        <!-- Class Timetable Helper Card -->
+        ${timetableHelper}
+        ${dayState.school ? choresHTML : ''}
+      </div>
 
-      ${dayState.school ? choresHTML : ''}
+      <div class="rt-part" data-part="chores">
 
       <!-- Room Tidy Sub-Checklist (Scheduled for Weekend) -->
       <div class="sub-checklist" style="margin-top:14px; ${isWeekend ? 'background:linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border:2px solid #3b82f6;' : ''}">
@@ -8139,9 +8270,12 @@ function editorHTML(day) {
       </div>
 
       ${laundryHTML}
-      ${eveningHTML}
       ${weeklyHTML}
+      </div>
 
+      <div class="rt-part" data-part="evening">${eveningHTML}</div>
+
+      <!-- the day's rating belongs to the day, not to a part of it -->
       <!-- Rating & Reflection -->
       <div class="cat-title" style="margin-top:22px"><span>🌟</span> Today's Mood & Star Rating</div>
       <div class="star-rating">
@@ -11810,6 +11944,7 @@ function dismissInstall() {
   try { localStorage.setItem(INSTALL_DISMISSED, '1'); } catch (e) {}
   const bar = document.getElementById('installBar');
   if (bar) bar.hidden = true;
+  document.body.classList.remove('install-open');
 }
 function installHowText() {
   if (isIos()) return 'In Safari: tap Share (the box with an arrow), then "Add to Home Screen".';
@@ -11828,6 +11963,7 @@ function showInstallBar(force) {
   if (how) how.textContent = installHowText();
   if (go) go.hidden = !deferredInstall;                    // only offer a button that will work
   bar.hidden = false;
+  document.body.classList.add('install-open');
 }
 
 /* The "Download as app" entry in the menus. A browser only offers a one-tap
