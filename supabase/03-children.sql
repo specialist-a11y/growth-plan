@@ -6,7 +6,9 @@
 -- until it is reloaded. Nothing is lost — the tracker keeps working on the
 -- device and retries — but run this when nobody is mid-routine, not at 7am.
 --
--- Run after 02-household.sql.
+-- Run after 02-household.sql. Safe to run twice: the Supabase SQL editor does
+-- not wrap a script in one transaction, so a failure part-way leaves earlier
+-- statements committed, and the fix is always to run the whole file again.
 
 -- ---------------------------------------------------------------- the children
 create table if not exists public.children (
@@ -22,12 +24,16 @@ create table if not exists public.children (
 
 alter table public.children enable row level security;
 
+drop policy if exists "children: read" on public.children;
 create policy "children: read"   on public.children
   for select using (in_household(owner_id));
+drop policy if exists "children: insert" on public.children;
 create policy "children: insert" on public.children
   for insert with check (in_household(owner_id));
+drop policy if exists "children: update" on public.children;
 create policy "children: update" on public.children
   for update using (in_household(owner_id)) with check (in_household(owner_id));
+drop policy if exists "children: delete" on public.children;
 create policy "children: delete" on public.children
   for delete using (auth.uid() = owner_id);      -- only the account holder
 

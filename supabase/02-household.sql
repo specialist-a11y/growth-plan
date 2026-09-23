@@ -20,10 +20,13 @@ alter table public.household_members enable row level security;
 
 -- Either side may see the link. Only the owner may break it, and nobody
 -- inserts directly — joining goes through accept_household_invite below.
+drop policy if exists "household: read own side" on public.household_members;
 create policy "household: read own side" on public.household_members
   for select using (auth.uid() = owner_id or auth.uid() = member_id);
+drop policy if exists "household: owner removes" on public.household_members;
 create policy "household: owner removes" on public.household_members
   for delete using (auth.uid() = owner_id);
+drop policy if exists "household: member leaves" on public.household_members;
 create policy "household: member leaves" on public.household_members
   for delete using (auth.uid() = member_id);
 
@@ -42,8 +45,10 @@ alter table public.household_invites enable row level security;
 
 -- An owner sees their own invitations. Nobody else can list them: a code is
 -- only useful to someone who was given it.
+drop policy if exists "invites: owner reads" on public.household_invites;
 create policy "invites: owner reads"   on public.household_invites
   for select using (auth.uid() = owner_id);
+drop policy if exists "invites: owner deletes" on public.household_invites;
 create policy "invites: owner deletes" on public.household_invites
   for delete using (auth.uid() = owner_id);
 
@@ -137,12 +142,16 @@ drop policy if exists "own months: write"  on public.growth_months;
 drop policy if exists "own months: update" on public.growth_months;
 drop policy if exists "own months: delete" on public.growth_months;
 
+drop policy if exists "household months: read" on public.growth_months;
 create policy "household months: read"   on public.growth_months
   for select using (in_household(user_id));
+drop policy if exists "household months: insert" on public.growth_months;
 create policy "household months: insert" on public.growth_months
   for insert with check (in_household(user_id));
+drop policy if exists "household months: update" on public.growth_months;
 create policy "household months: update" on public.growth_months
   for update using (in_household(user_id)) with check (in_household(user_id));
+drop policy if exists "household months: delete" on public.growth_months;
 create policy "household months: delete" on public.growth_months
   for delete using (in_household(user_id));
 
@@ -150,10 +159,13 @@ drop policy if exists "own profile: read"   on public.profiles;
 drop policy if exists "own profile: insert" on public.profiles;
 drop policy if exists "own profile: update" on public.profiles;
 
+drop policy if exists "household profile: read" on public.profiles;
 create policy "household profile: read"   on public.profiles
   for select using (in_household(user_id));
+drop policy if exists "household profile: insert" on public.profiles;
 create policy "household profile: insert" on public.profiles
   for insert with check (in_household(user_id));
+drop policy if exists "household profile: update" on public.profiles;
 create policy "household profile: update" on public.profiles
   for update using (in_household(user_id)) with check (in_household(user_id));
 

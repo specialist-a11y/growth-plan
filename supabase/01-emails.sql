@@ -16,10 +16,13 @@ create table if not exists public.email_prefs (
 
 alter table public.email_prefs enable row level security;
 
+drop policy if exists "own email prefs: read" on public.email_prefs;
 create policy "own email prefs: read"   on public.email_prefs
   for select using (auth.uid() = user_id);
+drop policy if exists "own email prefs: insert" on public.email_prefs;
 create policy "own email prefs: insert" on public.email_prefs
   for insert with check (auth.uid() = user_id);
+drop policy if exists "own email prefs: update" on public.email_prefs;
 create policy "own email prefs: update" on public.email_prefs
   for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
@@ -38,6 +41,7 @@ alter table public.email_log enable row level security;
 
 -- A parent may see what was sent to them. Nobody writes this from the browser:
 -- the sender runs with the service role, which bypasses RLS.
+drop policy if exists "own email log: read" on public.email_log;
 create policy "own email log: read" on public.email_log
   for select using (auth.uid() = user_id);
 

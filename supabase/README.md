@@ -8,6 +8,26 @@ Nothing new has to be synced — the tracker already sends the month rows, the
 task list, the claims and the deadline settings to `growth_months`, so the
 server can work all of it out from what is already there.
 
+## Which scripts have I already run?
+
+Paste `00-where-am-i.sql` into the SQL editor. It prints one row per script
+saying `done` or `RUN IT`, and it only reads, so it is always safe.
+
+**Every script here is safe to run twice.** That is worth knowing because the
+Supabase SQL editor does *not* wrap a script in a single transaction: if one
+statement fails, everything before it has already been committed. A half-run
+script is normal, and the fix is always to run the whole file again.
+
+Errors name the table, and the table tells you the file:
+
+| Table in the error | Script |
+|---|---|
+| `growth_months` | `../Supabase_Setup.sql` |
+| `profiles` | `../supabase-profiles.sql` |
+| `email_prefs`, `email_log` | `01-emails.sql` |
+| `household_members`, `household_invites` | `02-household.sql` |
+| `children` | `03-children.sql` |
+
 ## What you need first
 
 - **A Resend account** (resend.com). The free tier sends 3,000 emails a month,
