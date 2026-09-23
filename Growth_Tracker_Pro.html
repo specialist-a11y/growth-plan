@@ -4048,14 +4048,24 @@ body.demo-on #appSidebar{ top:var(--demo-bar-h,46px) !important; height:calc(100
 .quick-btn small{ display:block; font-size:10.5px; color:var(--t-muted,#8d8d99); margin-top:1px; }
 @media (max-width:900px){ .quick-row{ display:flex; } }
 
-/* the parent tabs scroll sideways; say so rather than leaving it to be found */
-.pd-tabs{ position:relative; }
-.pd-tabs-wrap{ position:relative; }
-.pd-tabs-wrap::after{ content:''; position:absolute; right:0; top:0; bottom:8px; width:34px; pointer-events:none;
-  background:linear-gradient(90deg, rgba(20,20,26,0), var(--t-panel,#14141a)); opacity:0; transition:opacity .2s; }
-.pd-tabs-wrap.more-right::after{ opacity:1; }
-.pd-tabs-hint{ display:none; font-size:10.5px; color:var(--t-muted,#8d8d99); letter-spacing:.04em; padding:0 0 8px; }
-@media (max-width:760px){ .pd-tabs-hint{ display:block; } }
+/* The tab bar is wider than a phone. A faint gradient was not enough of a
+   sign, so there are arrows — beside the strip rather than floating over it,
+   which would leave a chip half-hidden underneath. */
+.pd-tabs-wrap{ display:flex; align-items:flex-start; gap:6px; }
+.pd-tabs{ flex:1 1 auto; min-width:0; scroll-behavior:smooth; }
+.pd-arrow{ display:none; flex:none; margin-top:12px; width:32px; height:38px;
+  align-items:center; justify-content:center; padding:0; cursor:pointer;
+  border:1px solid var(--t-line,#26262e); border-radius:10px;
+  background:var(--t-panel-2,#1b1b21); color:var(--t-text,#f2f2f5);
+  font-size:20px; font-weight:800; line-height:1; }
+.pd-arrow:active{ border-color:var(--accent); }
+.pd-tabs-wrap.more-left .pd-arrow.left{ display:flex; }
+.pd-tabs-wrap.more-right .pd-arrow.right{ display:flex; }
+/* the arrows are a phone answer; with room the chips simply wrap */
+@media (min-width:860px){
+  .pd-tabs{ flex-wrap:wrap; overflow:visible; }
+  .pd-arrow{ display:none !important; }
+}
 /* what only a Pro family can wear */
 .store-pro{ position:absolute; left:8px; top:8px; font-size:9.5px; font-weight:800; letter-spacing:.09em;
   padding:2px 7px; border-radius:99px; background:linear-gradient(96deg,var(--accent),var(--accent-2)); color:#fff; }
@@ -4867,7 +4877,7 @@ body.theme-sportscar .hero::after {
     <!-- unlocked -->
     <div id="parentBody" style="display:none;">
       <div class="pd-tabs-wrap" id="pdTabsWrap">
-      <div class="pd-tabs-hint">Swipe across for more →</div>
+      <button type="button" class="pd-arrow left" id="pdArrowL" onclick="scrollParentTabs(-1)" aria-label="Previous sections">‹</button>
       <div class="pd-tabs" id="pdJump" role="tablist">
         <button type="button" role="tab" data-sec="pgNow" onclick="showParentSection('pgNow')">✅ Needs you<span class="pd-badge" id="pgApprovalBadge" hidden>0</span></button>
         <button type="button" role="tab" data-sec="pgRoutine" onclick="showParentSection('pgRoutine')">📋 Routine</button>
@@ -4876,6 +4886,7 @@ body.theme-sportscar .hero::after {
         <button type="button" role="tab" data-sec="pgSchool" onclick="showParentSection('pgSchool')">🏫 School</button>
         <button type="button" role="tab" data-sec="pgSettings" onclick="showParentSection('pgSettings')">⚙️ Settings</button>
       </div>
+      <button type="button" class="pd-arrow right" id="pdArrowR" onclick="scrollParentTabs(1)" aria-label="More sections">›</button>
       </div>
 
       <details class="pd-group" id="pgNow" open>
@@ -10582,13 +10593,20 @@ function watchParentTabs() {
   if (!bar || !wrap || watchParentTabs.on) return;
   watchParentTabs.on = true;
   const paint = () => {
-    const more = bar.scrollWidth - bar.clientWidth - bar.scrollLeft > 8;
-    wrap.classList.toggle('more-right', more);
+    wrap.classList.toggle('more-right', bar.scrollWidth - bar.clientWidth - bar.scrollLeft > 8);
+    wrap.classList.toggle('more-left', bar.scrollLeft > 8);
   };
   bar.addEventListener('scroll', paint, { passive: true });
   window.addEventListener('resize', paint);
   paint();
   watchParentTabs.paint = paint;
+}
+
+function scrollParentTabs(dir) {
+  const bar = document.getElementById('pdJump');
+  if (!bar) return;
+  bar.scrollBy({ left: dir * Math.round(bar.clientWidth * 0.7), behavior: 'smooth' });
+  setTimeout(() => { if (watchParentTabs.paint) watchParentTabs.paint(); }, 350);
 }
 
 function showParentSection(id, keepScroll) {
