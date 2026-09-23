@@ -4025,7 +4025,9 @@ body.demo-on #appSidebar{ top:var(--demo-bar-h,46px) !important; height:calc(100
   .pd-page div[style*="grid-template-columns:repeat(3"]{ grid-template-columns:1fr !important; }
 }
 /* the walk-through a family gets once */
-#tourLayer{ position:fixed; inset:0; z-index:95; }
+/* Above the bottom nav (100, and 200 on a phone), or the step that points at
+   the Parent button rings something nobody can see. */
+#tourLayer{ position:fixed; inset:0; z-index:300; }
 .tour-dim{ position:absolute; inset:0; background:rgba(0,0,0,.62); }
 .tour-ring{ position:absolute; border-radius:16px; box-shadow:0 0 0 3px var(--accent), 0 0 0 9999px rgba(0,0,0,.62);
   transition:all .25s ease; pointer-events:none; }
@@ -4439,7 +4441,7 @@ body.theme-sportscar .hero::after {
         <span class="sidebar-nav-item-icon">📅</span>
         <span>Calendar</span>
       </li>
-      <li class="sidebar-nav-item" onclick="switchMainTab('todayPanel', this)">
+      <li class="sidebar-nav-item" id="sideNavRoutine" onclick="switchMainTab('todayPanel', this)">
         <span class="sidebar-nav-item-icon">✅</span>
         <span>Daily Routine</span>
       </li>
@@ -4467,7 +4469,7 @@ body.theme-sportscar .hero::after {
         <span class="sidebar-nav-item-icon">🎯</span>
         <span>Goals & Rewards</span>
       </li>
-      <li class="sidebar-nav-item" onclick="openParentDashboard()">
+      <li class="sidebar-nav-item" id="sideNavParent" onclick="openParentDashboard()">
         <span class="sidebar-nav-item-icon">🔐</span>
         <span>Parent Dashboard</span>
       </li>
@@ -11635,7 +11637,12 @@ function themeCategoriesInUse() {
    already using is theirs to keep, so turning the store on takes nothing away. */
 const storeKey = 'teen-store';
 const FREE_THEMES = ['default', 'sneakers'];
-const FREE_AVATARS = ['pixel', 'sunny'];
+/* Six characters cost nothing, three reading as boys and three as girls, so a
+   child never opens the store on day one and finds nobody who looks like them
+   waiting behind 400 points. They also spread across interests rather than
+   being six versions of one look: gaming, bright and casual, bookish, sport,
+   streetwear, speed. The rest are still worth saving for. */
+const FREE_AVATARS = ['pixel', 'sunny', 'scribe', 'varsity', 'ace', 'cobalt'];
 
 /* ===== WHAT COMES WITH PRO =====
    A dozen themes and eight characters that only a Pro family can wear. They
@@ -12065,7 +12072,9 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
    than describing it. */
 const TOUR_KEY = 'teen-tour-done';
 const TOUR_STEPS = [
-  { el: '#dailyEditor, #todayPanel', title: 'Start here',
+  // each step names a phone fallback: the panel it wants is often on another
+  // tab, and a step that rings nothing is a step that teaches nothing
+  { el: '#dailyEditor, #todayPanel, #mbNavRoutine, #sideNavRoutine', title: 'Start here',
     text: 'This is the day\'s list. Your child ticks things off as they do them — that is the whole of their side.' },
   { el: '#pointsBalanceDisplay, .stat', title: 'Ticks become points',
     text: 'Five points a task, 25 for finishing a whole day, 50 for a seven-day streak. Points buy rewards you approve.' },
@@ -12073,9 +12082,11 @@ const TOUR_STEPS = [
     text: 'A character and a background to go with it. Children who pick their own open the app more — it is worth two minutes on day one.' },
   { el: '#calendar', title: 'The month at a glance',
     text: 'Every day, how much got done. Tap a day to see or edit it.' },
-  { el: '#mbNavParent, .sidebar-nav-item:last-child', title: 'Your side is behind a PIN',
-    text: 'Rewards, the routine, the timetable and approvals live in the Parent Dashboard. Set a PIN there so it stays yours.' },
-  { el: '#storePanel, .tab[data-tab="storePanel"]', title: 'Points have somewhere to go',
+  // name the way in, and ring it: ":last-child" used to land on "Download as
+  // app" while the words talked about a PIN
+  { el: '#mbNavParent, #sideNavParent', title: 'Your side is behind a PIN',
+    text: 'Rewards, the routine, the timetable and approvals live in the Parent Dashboard — the 🔐 button, in the bar along the bottom on a phone or down the left on a computer. Open it and set a PIN so it stays yours.' },
+  { el: '#storePanel, .tab[data-tab="storePanel"], #mbNavMore', title: 'Points have somewhere to go',
     text: 'Themes, characters and extras, bought with points — never money. You can switch the store off entirely.' }
 ];
 let tourAt = -1;
