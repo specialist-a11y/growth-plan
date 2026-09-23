@@ -21,7 +21,7 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const RESEND_KEY   = Deno.env.get('RESEND_API_KEY') ?? '';
 const CRON_KEY     = Deno.env.get('CRON_KEY') ?? '';
-const FROM         = Deno.env.get('EMAIL_FROM') ?? 'UNPROMPTED <hello@unprompted.app>';
+const FROM         = Deno.env.get('EMAIL_FROM') ?? 'UPNXT <hello@upnxt.app>';
 const APP_URL      = Deno.env.get('APP_URL') ?? 'https://growth-plan-lake.vercel.app/Growth_Tracker_Pro.html';
 
 const SETTINGS_ROW = 'teen-settings';
@@ -37,7 +37,7 @@ function shell(title: string, body: string) {
     font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#13161d;">
     <div style="max-width:520px;margin:0 auto;background:#fff;border:1px solid #d6e0eb;border-radius:16px;overflow:hidden;">
       <div style="padding:18px 22px;border-bottom:1px solid #e4ebf3;font-weight:800;letter-spacing:.12em;font-size:14px;">
-        <span style="color:#dd3f45;">UN</span>PROMPTED
+        <span style="color:#dd3f45;">UP</span>NXT
       </div>
       <div style="padding:22px;">
         <h1 style="margin:0 0 12px;font-size:20px;line-height:1.3;">${esc(title)}</h1>

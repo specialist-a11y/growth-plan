@@ -11,17 +11,17 @@ Pick one — don't paste both.
 ```
 Create my product catalog in my Paddle live account.
 
-I sell a subscription web app for families called UNPROMPTED: a daily routine,
+I sell a subscription web app for families called UPNXT: a daily routine,
 homework and timetable tracker that a parent sets up for their child.
 
 Create two products, tax category "saas", each with a monthly and an annual
 price:
 
-- UNPROMPTED Standard — one child
+- UPNXT Standard — one child
   Monthly: USD 3.99   (amount "399")
   Annual:  USD 39.00  (amount "3900")
 
-- UNPROMPTED Pro — up to four children, second parent login, weekly email reports
+- UPNXT Pro — up to four children, second parent login, weekly email reports
   Monthly: USD 6.99   (amount "699")
   Annual:  USD 69.00  (amount "6900")
 

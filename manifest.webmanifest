@@ -1,7 +1,7 @@
 {
-  "name": "UNPROMPTED",
-  "short_name": "UNPROMPTED",
-  "description": "UNPROMPTED is a daily routine, homework and timetable tracker for teens, set up by a parent. Points, streaks and rewards they actually want.",
+  "name": "UPNXT",
+  "short_name": "UPNXT",
+  "description": "UPNXT is a daily routine, homework and timetable tracker for teens, set up by a parent. Points, streaks and rewards they actually want.",
   "start_url": "./Growth_Tracker_Pro.html",
   "scope": "./",
   "display": "standalone",

@@ -39,7 +39,7 @@ supabase functions deploy notify
 
 supabase secrets set RESEND_API_KEY=re_...
 supabase secrets set CRON_KEY="$(openssl rand -hex 24)"     # keep a copy
-supabase secrets set EMAIL_FROM="UNPROMPTED <hello@yourdomain>"
+supabase secrets set EMAIL_FROM="UPNXT <hello@yourdomain>"
 supabase secrets set APP_URL="https://growth-plan-lake.vercel.app/Growth_Tracker_Pro.html"
 ```
 
