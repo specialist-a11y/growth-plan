@@ -137,6 +137,17 @@ $$;
 grant execute on function public.in_household(uuid) to authenticated;
 
 -- Replace the single-user policies on the data tables.
+--
+-- Both name sets have to go. Supabase_Setup.sql created them with the long
+-- "Users can ..." names; the short "own months: ..." names below are what an
+-- earlier draft of that file used. Dropping only one set leaves four dead
+-- policies behind that say they replace nothing — which is what happened
+-- until a test counted eight policies on growth_months and found four of
+-- them were the originals.
+drop policy if exists "Users can select their own growth months" on public.growth_months;
+drop policy if exists "Users can insert their own growth months" on public.growth_months;
+drop policy if exists "Users can update their own growth months" on public.growth_months;
+drop policy if exists "Users can delete their own growth months" on public.growth_months;
 drop policy if exists "own months: read"   on public.growth_months;
 drop policy if exists "own months: write"  on public.growth_months;
 drop policy if exists "own months: update" on public.growth_months;
