@@ -90,12 +90,39 @@ end $$;
 create unique index if not exists growth_months_child_month_idx
   on public.growth_months (user_id, child_id, month_key);
 
-alter table public.growth_months drop constraint if exists growth_months_user_id_month_key_key;
-drop index if exists public.growth_months_user_id_month_key_key;
+-- The old key has to go, or a second child's September collides with the
+-- first child's September. Drop it by what it IS rather than by name: this
+-- database calls it unique_user_month, a stock Postgres one would call it
+-- growth_months_user_id_month_key_key, and a "drop if exists" on the wrong
+-- name is a NOTICE, not an error — it would leave the limit in place and
+-- every check below would still pass.
+do $$
+declare c record;
+begin
+  for c in
+    select con.conname
+      from pg_constraint con
+      join pg_class t on t.oid = con.conrelid
+     where t.relname = 'growth_months' and con.contype = 'u'
+       and (select array_agg(att.attname::text order by att.attname)
+              from unnest(con.conkey) k
+              join pg_attribute att on att.attrelid = con.conrelid and att.attnum = k)
+           = array['month_key','user_id']
+  loop
+    execute format('alter table public.growth_months drop constraint %I', c.conname);
+    raise notice 'dropped the old one-child key: %', c.conname;
+  end loop;
+end $$;
 
 -- ---------------------------------------------------------------- checking it
 -- After running this:
 --   select count(*) from children;                                  -- one per account with data
 --   select count(*) from growth_months where child_id is null;      -- must be 0
+--
+--   -- the one that actually matters: no unique key on (user_id, month_key)
+--   -- may survive, or a second child cannot have the same month as the first
+--   select conname from pg_constraint
+--    where conrelid = 'public.growth_months'::regclass and contype = 'u';
+--   -- expect only keys involving child_id; nothing on user_id + month_key alone
 --   select name, (select count(*) from growth_months g where g.child_id = c.id) as rows
 --     from children c;                                              -- every child has their months
