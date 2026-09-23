@@ -8071,8 +8071,10 @@ function setDeadline(g, which, v) {
    parts of a day, opening on the part it actually is, it becomes a handful of
    things to do now. */
 const DAY_PARTS = [
-  { id: 'morning',   icon: '🌅', label: 'Morning',  cats: ['morning'] },
-  { id: 'afternoon', icon: '🏡', label: 'After school', cats: ['chores'] },
+  // a sunrise is a whole scene — sun, gradient, water — and turns to mush at
+  // 21px; a plain sun reads instantly and pairs with the moon on Evening
+  { id: 'morning',   icon: '☀️', label: 'Morning',  cats: ['morning'] },
+  { id: 'afternoon', icon: '🏠', label: 'After school', cats: ['chores'] },
   { id: 'evening',   icon: '🌙', label: 'Evening',  cats: ['evening'] },
   { id: 'chores',    icon: '🧹', label: 'Chores',   cats: ['laundry', 'weekly', 'tidy'] }
 ];
