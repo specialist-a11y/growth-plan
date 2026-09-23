@@ -3526,7 +3526,7 @@ h1,h2,h3,h4,.sidebar-brand-title,.stat-val,.hero h1{ font-family:Inter,-apple-sy
   .mobile-vibe-sub{ font-size:12px !important; color:var(--t-dim) !important; }
   .calendar{ padding:0 !important; background:transparent !important; border:none !important; }
   #mobileBottomNav{ height:auto !important; background:rgba(10,10,13,.96) !important; backdrop-filter:blur(14px) !important; border-top:1px solid var(--t-line) !important;
-    display:grid !important; grid-template-columns:repeat(4,1fr) !important; padding:9px 6px calc(9px + env(safe-area-inset-bottom)) !important; }
+    display:grid !important; grid-template-columns:repeat(5,1fr) !important; padding:9px 4px calc(9px + env(safe-area-inset-bottom)) !important; }
   .mobile-nav-btn{ gap:4px !important; font-size:10.5px !important; font-weight:600 !important; color:#6e6e7a !important; padding:5px 0 !important; background:none !important; border-radius:0 !important; }
   .mobile-nav-btn.active{ color:var(--accent) !important; background:none !important; }
   .mobile-nav-btn-icon{ font-size:19px !important; line-height:1 !important; }
@@ -4021,6 +4021,41 @@ body.demo-on #appSidebar{ top:var(--demo-bar-h,46px) !important; height:calc(100
   .pd-page div[style*="grid-template-columns:1fr 1fr"]{ grid-template-columns:1fr !important; }
   .pd-page div[style*="grid-template-columns:repeat(3"]{ grid-template-columns:1fr !important; }
 }
+/* the walk-through a family gets once */
+#tourLayer{ position:fixed; inset:0; z-index:95; }
+.tour-dim{ position:absolute; inset:0; background:rgba(0,0,0,.62); }
+.tour-ring{ position:absolute; border-radius:16px; box-shadow:0 0 0 3px var(--accent), 0 0 0 9999px rgba(0,0,0,.62);
+  transition:all .25s ease; pointer-events:none; }
+.tour-card{ position:absolute; left:50%; transform:translateX(-50%); bottom:24px; width:min(420px,92vw);
+  background:var(--t-panel,#14141a); border:1px solid var(--t-line,#26262e); border-radius:18px;
+  padding:18px 20px 16px; box-shadow:0 24px 60px rgba(0,0,0,.6); }
+.tour-step{ font-family:var(--mono,ui-monospace,monospace); font-size:10.5px; font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--accent); margin-bottom:6px; }
+.tour-card h3{ margin:0 0 6px; font-size:18px; color:var(--t-text,#f2f2f5); }
+.tour-card p{ margin:0; font-size:14px; line-height:1.55; color:var(--t-muted,#8d8d99); }
+.tour-acts{ display:flex; gap:10px; justify-content:flex-end; margin-top:14px; }
+@media (max-width:760px){ .tour-card{ bottom:calc(84px + env(safe-area-inset-bottom,0px)); } }
+@media (prefers-reduced-motion:reduce){ .tour-ring{ transition:none; } }
+/* character and themes, where a child will actually see them */
+.quick-row{ display:none; gap:10px; margin:0 0 16px; }
+.quick-btn{ flex:1 1 0; min-width:0; display:flex; align-items:center; gap:10px; text-align:left;
+  padding:11px 12px; border:1px solid var(--t-line,#26262e); border-radius:14px;
+  background:var(--t-panel-2,#1b1b21); color:var(--t-text,#f2f2f5); font:inherit; cursor:pointer; }
+.quick-btn:active{ border-color:var(--accent); }
+.quick-ico{ font-size:20px; line-height:1; flex:none; }
+.quick-ico img{ width:30px; height:30px; border-radius:8px; object-fit:cover; display:block; }
+.quick-btn b{ display:block; font-size:12.5px; }
+.quick-btn small{ display:block; font-size:10.5px; color:var(--t-muted,#8d8d99); margin-top:1px; }
+@media (max-width:900px){ .quick-row{ display:flex; } }
+
+/* the parent tabs scroll sideways; say so rather than leaving it to be found */
+.pd-tabs{ position:relative; }
+.pd-tabs-wrap{ position:relative; }
+.pd-tabs-wrap::after{ content:''; position:absolute; right:0; top:0; bottom:8px; width:34px; pointer-events:none;
+  background:linear-gradient(90deg, rgba(20,20,26,0), var(--t-panel,#14141a)); opacity:0; transition:opacity .2s; }
+.pd-tabs-wrap.more-right::after{ opacity:1; }
+.pd-tabs-hint{ display:none; font-size:10.5px; color:var(--t-muted,#8d8d99); letter-spacing:.04em; padding:0 0 8px; }
+@media (max-width:760px){ .pd-tabs-hint{ display:block; } }
 /* what only a Pro family can wear */
 .store-pro{ position:absolute; left:8px; top:8px; font-size:9.5px; font-weight:800; letter-spacing:.09em;
   padding:2px 7px; border-radius:99px; background:linear-gradient(96deg,var(--accent),var(--accent-2)); color:#fff; }
@@ -4272,6 +4307,20 @@ body.theme-sportscar .hero::after {
 
 <div id="milestonePop" class="ms-pop" hidden></div>
 
+<div id="tourLayer" hidden>
+  <div class="tour-dim" onclick="skipTour()"></div>
+  <div class="tour-ring" id="tourRing" hidden></div>
+  <div class="tour-card" id="tourCard" role="dialog" aria-modal="true" aria-labelledby="tourTitle">
+    <div class="tour-step" id="tourStep"></div>
+    <h3 id="tourTitle"></h3>
+    <p id="tourText"></p>
+    <div class="tour-acts">
+      <button type="button" class="action ghost" onclick="skipTour()">Skip</button>
+      <button type="button" class="action primary" id="tourNext" onclick="nextTourStep()">Next</button>
+    </div>
+  </div>
+</div>
+
 <div class="ix-backdrop" id="marksHelp" hidden>
   <div class="ix-card ms-card" role="dialog" aria-modal="true" aria-labelledby="marksTitle">
     <button class="ix-close" onclick="closeMarks()" aria-label="Close">✕</button>
@@ -4446,6 +4495,19 @@ body.theme-sportscar .hero::after {
       </div>
 
     
+  <!-- On a phone the character and the themes live behind the More menu, which
+       is the last place a child looks. These say so on the way past. -->
+  <div class="quick-row" id="quickRow">
+    <button type="button" class="quick-btn" onclick="openAvatarPicker()">
+      <span class="quick-ico" id="quickAvatarIco">🧍</span>
+      <span><b id="quickAvatarLabel">Pick your character</b><small>Choose who represents you</small></span>
+    </button>
+    <button type="button" class="quick-btn" onclick="openThemeModal()">
+      <span class="quick-ico">🎨</span>
+      <span><b>Change the look</b><small>55 backgrounds and colours</small></span>
+    </button>
+  </div>
+
   <!-- Concept 4 Stat Cards Row -->
   <div class="stats">
     <article class="stat">
@@ -4804,6 +4866,8 @@ body.theme-sportscar .hero::after {
 
     <!-- unlocked -->
     <div id="parentBody" style="display:none;">
+      <div class="pd-tabs-wrap" id="pdTabsWrap">
+      <div class="pd-tabs-hint">Swipe across for more →</div>
       <div class="pd-tabs" id="pdJump" role="tablist">
         <button type="button" role="tab" data-sec="pgNow" onclick="showParentSection('pgNow')">✅ Needs you<span class="pd-badge" id="pgApprovalBadge" hidden>0</span></button>
         <button type="button" role="tab" data-sec="pgRoutine" onclick="showParentSection('pgRoutine')">📋 Routine</button>
@@ -4811,6 +4875,7 @@ body.theme-sportscar .hero::after {
         <button type="button" role="tab" data-sec="pgDeadlines" onclick="showParentSection('pgDeadlines')">⏰ Deadlines</button>
         <button type="button" role="tab" data-sec="pgSchool" onclick="showParentSection('pgSchool')">🏫 School</button>
         <button type="button" role="tab" data-sec="pgSettings" onclick="showParentSection('pgSettings')">⚙️ Settings</button>
+      </div>
       </div>
 
       <details class="pd-group" id="pgNow" open>
@@ -4841,6 +4906,8 @@ body.theme-sportscar .hero::after {
           </select>
         </div>
       </div>
+      <label style="display:block; font-size:12.5px; font-weight:700; margin-top:12px;">Pick an icon</label>
+      <div id="newTaskIcons"></div>
       <div style="display:flex; gap:10px; margin-top:10px;">
         <button class="action ghost" onclick="addTask()">＋ Add Task</button>
         <button class="action ghost" onclick="resetTasksToDefault()">↺ Restore Default Routine</button>
@@ -4996,6 +5063,10 @@ body.theme-sportscar .hero::after {
       </div>
       <div id="qwNow" class="qw-now"></div>
 
+      <div style="margin:14px 0 0;">
+        <button class="action ghost" onclick="startTour(true)">🧭 Show me around again</button>
+      </div>
+
       <h3 id="familySection" style="font-size:16px; font-weight:800; margin:22px 0 6px;">👥 A second parent <span class="pro-chip">PRO</span></h3>
       <div class="meta" style="margin-bottom:10px;">Another parent or carer, with their own login, seeing the same child. Either of you can approve rewards; neither can see the other's password.</div>
       <div id="householdBox" class="hh-box">
@@ -5050,7 +5121,7 @@ body.theme-sportscar .hero::after {
             <input type="checkbox" id="emDeadlines" onchange="saveEmailPrefs()">
             <span><b>When a deadline is missed</b><small>The morning after, listing what yesterday's deadlines caught. Off by default — it can nag.</small></span>
           </label>
-          <div class="em-foot">
+          <div class="em-foot" style="border-top:1px solid var(--t-line,#26262e); margin-top:4px;">
             <span id="emailTo" class="meta"></span>
             <span id="emailSaved" class="meta" hidden>Saved</span>
           </div>
@@ -5168,6 +5239,10 @@ body.theme-sportscar .hero::after {
   <button type="button" class="mobile-nav-btn" id="mbNavGoals" onclick="switchMainTab('intentionsPanel', this)">
     <span class="mobile-nav-btn-icon">🏆</span>
     <span>Goals</span>
+  </button>
+  <button type="button" class="mobile-nav-btn" id="mbNavParent" onclick="openParentDashboard()">
+    <span class="mobile-nav-btn-icon">🔐</span>
+    <span>Parent</span>
   </button>
   <button type="button" class="mobile-nav-btn" id="mbNavMore" onclick="openMoreMenu()">
     <span class="mobile-nav-btn-icon">•••</span>
@@ -10499,6 +10574,23 @@ function downloadAllData() {
 const PARENT_SECTIONS = ['pgNow', 'pgRoutine', 'pgRewards', 'pgDeadlines', 'pgSchool', 'pgSettings'];
 let parentSection = 'pgNow';
 
+/* The fade at the edge of the tab bar means "there is more this way". It has
+   to answer to the scroll position, or it is decoration. */
+function watchParentTabs() {
+  const bar = document.getElementById('pdJump');
+  const wrap = document.getElementById('pdTabsWrap');
+  if (!bar || !wrap || watchParentTabs.on) return;
+  watchParentTabs.on = true;
+  const paint = () => {
+    const more = bar.scrollWidth - bar.clientWidth - bar.scrollLeft > 8;
+    wrap.classList.toggle('more-right', more);
+  };
+  bar.addEventListener('scroll', paint, { passive: true });
+  window.addEventListener('resize', paint);
+  paint();
+  watchParentTabs.paint = paint;
+}
+
 function showParentSection(id, keepScroll) {
   if (PARENT_SECTIONS.indexOf(id) === -1) id = 'pgNow';
   parentSection = id;
@@ -10517,6 +10609,11 @@ function showParentSection(id, keepScroll) {
     const top = document.getElementById('parentPanel');
     if (top) top.scrollIntoView({ block: 'start' });
   }
+  // keep the chosen tab in sight when the bar is wider than the screen
+  const chip = document.querySelector(`#pdJump button[data-sec="${id}"]`);
+  if (chip && chip.scrollIntoView) chip.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+  watchParentTabs();
+  if (watchParentTabs.paint) watchParentTabs.paint();
 }
 /* kept for anything that still asks for a group by name */
 function openParentGroup(id) { showParentSection(id); }
@@ -10653,6 +10750,10 @@ function decideRedemption(id, status) {
 }
 
 const REWARD_ICONS = ['🎁', '🎮', '⏰', '🍕', '🎧', '🎟️', '🎨', '🍦', '🎬', '🛹', '⚽', '🎸', '📚', '💸', '🧁', '🏖️', '🚲', '🐾'];
+/* Chores and routines want different pictures from rewards: a reward is a
+   treat, a task is a job. */
+const TASK_ICONS = ['🧼', '🪥', '🚿', '🧴', '👔', '🎒', '🍎', '💧', '📚', '✏️', '💻', '🧽', '🧺', '👕', '🛏️', '🧹',
+                    '🗑️', '🍽️', '🐾', '🌙', '⏰', '🎧', '⚽', '🏃', '💊', '🎹', '🧠', '✅'];
 let newRewardIcon = '🎁', editingRewardId = null, editRewardIcon = '🎁';
 
 function iconPickerHTML(selected, handler) {
@@ -10660,6 +10761,18 @@ function iconPickerHTML(selected, handler) {
     `<button type="button" class="icon-opt${e === selected ? ' on' : ''}" aria-pressed="${e === selected}" onclick="${handler}('${e}')">${e}</button>`).join('') + `</div>`;
 }
 function pickNewRewardIcon(e) { newRewardIcon = e; renderNewRewardIcons(); }
+
+/* ----- an icon for a routine task ----- */
+let newTaskIcon = '✅';
+function taskIconPickerHTML(selected, handler) {
+  return `<div class="icon-picker" role="group" aria-label="Choose an icon">` + TASK_ICONS.map(e =>
+    `<button type="button" class="icon-opt${e === selected ? ' on' : ''}" aria-pressed="${e === selected}" onclick="${handler}('${e}')">${e}</button>`).join('') + `</div>`;
+}
+function pickNewTaskIcon(e) { newTaskIcon = e; renderNewTaskIcons(); }
+function renderNewTaskIcons() {
+  const el = document.getElementById('newTaskIcons');
+  if (el) el.innerHTML = taskIconPickerHTML(newTaskIcon, 'pickNewTaskIcon');
+}
 function renderNewRewardIcons() {
   const el = document.getElementById('newRewardIcons');
   if (el) el.innerHTML = iconPickerHTML(newRewardIcon, 'pickNewRewardIcon');
@@ -10766,6 +10879,7 @@ const TASK_CATEGORIES = [
 ];
 
 function renderParentTasks() {
+  renderNewTaskIcons();
   const el = document.getElementById('parentTasks');
   if (!el) return;
   el.innerHTML = dailyTasks.map(t => {
@@ -10944,12 +11058,17 @@ function tasksApplyImport() {
 }
 
 function addTask() {
-  const name = (document.getElementById('newTaskName').value || '').trim();
+  const typed = (document.getElementById('newTaskName').value || '').trim();
   const cat  = document.getElementById('newTaskCat').value;
-  if (!name) return parentMsg('&#9888;&#65039; Give the task a name.');
+  if (!typed) return parentMsg('&#9888;&#65039; Give the task a name.');
+  // a child reads the icon before the words, and every built-in task has one
+  const already = /^[\p{Extended_Pictographic}]/u.test(typed);
+  const name = already ? typed : (newTaskIcon ? newTaskIcon + ' ' + typed : typed);
   dailyTasks.push({ id: 't' + Date.now(), name, cat });
   saveStore(tasksKey, dailyTasks);
   document.getElementById('newTaskName').value = '';
+  newTaskIcon = '✅';
+  renderNewTaskIcons();
   renderParentTasks();
   renderAll();
   parentMsg('&#128994; Added "' + escapeHTML(name) + '" to the daily routine.', true);
@@ -11142,6 +11261,10 @@ function renderAvatarUI() {
     if (tag)  tag.textContent  = a ? a.tag : 'Choose an avatar to represent you';
   }
   renderIdentity();
+  const qIco = document.getElementById('quickAvatarIco');
+  const qLabel = document.getElementById('quickAvatarLabel');
+  if (qIco) qIco.innerHTML = a ? `<img src="${a.face}" alt="">` : '🧍';
+  if (qLabel) qLabel.textContent = a ? a.name : 'Pick your character';
   if (typeof applyStoreCosmetics === 'function') applyStoreCosmetics();
 }
 
@@ -11779,6 +11902,74 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
   });
 }
 
+/* ===== THE FIRST TIME =====
+   A family opening this for the first time sees a month grid, a routine, a
+   store, points, deadlines and a locked dashboard, and has to guess which
+   matters. Six steps, once, pointing at the real thing on the page rather
+   than describing it. */
+const TOUR_KEY = 'teen-tour-done';
+const TOUR_STEPS = [
+  { el: '#dailyEditor, #todayPanel', title: 'Start here',
+    text: 'This is the day\'s list. Your child ticks things off as they do them — that is the whole of their side.' },
+  { el: '#pointsBalanceDisplay, .stat', title: 'Ticks become points',
+    text: 'Five points a task, 25 for finishing a whole day, 50 for a seven-day streak. Points buy rewards you approve.' },
+  { el: '#quickRow, #avatarCard', title: 'Make it theirs',
+    text: 'A character and a background to go with it. Children who pick their own open the app more — it is worth two minutes on day one.' },
+  { el: '#calendar', title: 'The month at a glance',
+    text: 'Every day, how much got done. Tap a day to see or edit it.' },
+  { el: '#mbNavParent, .sidebar-nav-item:last-child', title: 'Your side is behind a PIN',
+    text: 'Rewards, the routine, the timetable and approvals live in the Parent Dashboard. Set a PIN there so it stays yours.' },
+  { el: '#storePanel, .tab[data-tab="storePanel"]', title: 'Points have somewhere to go',
+    text: 'Themes, characters and extras, bought with points — never money. You can switch the store off entirely.' }
+];
+let tourAt = -1;
+
+function tourDone() { try { return localStorage.getItem(TOUR_KEY) === '1'; } catch (e) { return true; } }
+function markTourDone() { try { localStorage.setItem(TOUR_KEY, '1'); } catch (e) {} }
+
+function startTour(force) {
+  if (!force && (tourDone() || gateNeeded() || demoMode())) return;
+  tourAt = -1;
+  const layer = document.getElementById('tourLayer');
+  if (layer) layer.hidden = false;
+  nextTourStep();
+}
+
+function nextTourStep() {
+  tourAt++;
+  if (tourAt >= TOUR_STEPS.length) return endTour();
+  const step = TOUR_STEPS[tourAt];
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('tourStep', `Step ${tourAt + 1} of ${TOUR_STEPS.length}`);
+  set('tourTitle', step.title);
+  set('tourText', step.text);
+  const next = document.getElementById('tourNext');
+  if (next) next.textContent = tourAt === TOUR_STEPS.length - 1 ? 'Got it' : 'Next';
+
+  // ring whatever the step is about, if it is on screen
+  const target = step.el.split(',').map(sel => document.querySelector(sel.trim())).find(el => el && el.getBoundingClientRect().width > 0);
+  const ring = document.getElementById('tourRing');
+  if (!ring) return;
+  if (!target) { ring.hidden = true; return; }
+  target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  setTimeout(() => {
+    const r = target.getBoundingClientRect();
+    ring.hidden = false;
+    ring.style.left = Math.max(6, r.left - 6) + 'px';
+    ring.style.top = Math.max(6, r.top - 6) + 'px';
+    ring.style.width = Math.min(window.innerWidth - 12, r.width + 12) + 'px';
+    ring.style.height = Math.min(window.innerHeight - 12, r.height + 12) + 'px';
+  }, 260);
+}
+
+function skipTour() { endTour(); }
+function endTour() {
+  const layer = document.getElementById('tourLayer');
+  if (layer) layer.hidden = true;
+  markTourDone();
+  tourAt = -1;
+}
+
 /* ===== MILESTONES =====
    Things the child earns by doing the work, which change how their avatar
    looks. They are never sold in the store and never taken away once earned —
@@ -12281,6 +12472,7 @@ renderGate();
 checkChildAge();
 refreshInstallEntries();
 setTimeout(showInstallBar, 2500);   // let them see the app before inviting them to keep it
+setTimeout(() => startTour(), 1200);   // the first time only, and never over the sign-in gate
 if (!earnedMilestones() || !Object.keys(earnedMilestones()).length) checkMilestones(false);
 applyMilestoneLook();
 renderMilestones();
