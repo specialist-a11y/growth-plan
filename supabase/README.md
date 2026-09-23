@@ -145,10 +145,11 @@ select count(*) from growth_months;      -- must still be 0
 
 ## Up to four children
 
-`03-children.sql`. **Run it, then deploy the app, in that order.** Between the
-two there is a short window where browsers cannot sync: the app upserts against
-a unique index this script replaces. Nothing is lost — the tracker keeps
-working on the device and retries — but keep the gap to minutes.
+`03-children.sql`. The app that uses this is already deployed, so the only
+care needed is timing: a browser with the tracker **already open** is holding
+no child id and upserts against the unique index this script replaces, so it
+cannot sync until it is reloaded. Nothing is lost — the tracker keeps working
+on the device and retries — but run it when nobody is mid-routine.
 
 - `children` — one row per child, with `archived_at` ready for the rule that
   children two to four are kept 30 days after a plan drops back to one
@@ -164,7 +165,7 @@ On the device, the first child keeps the storage space the account already
 used, so an existing family notices nothing; children two onwards get their
 own. Switching child reloads the tracker into theirs.
 
-Check before deploying:
+Check after running it:
 
 ```sql
 select count(*) from children;                              -- one per account with data
