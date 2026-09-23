@@ -4054,7 +4054,12 @@ body.demo-on #appSidebar{ top:var(--demo-bar-h,46px) !important; height:calc(100
 #todayPanel .rt-daypick select{ flex:1; min-width:0; max-width:320px;
   padding:7px 12px !important; min-height:0 !important; }
 .rt-face{ width:36px; height:36px; border-radius:50%; overflow:hidden; display:grid; place-items:center;
-  background:var(--t-panel-2,#1b1b21); border:1px solid var(--t-line,#26262e); font-size:18px; flex:none; }
+  background:var(--t-panel-2,#1b1b21); border:1px solid var(--t-line,#26262e); font-size:18px; flex:none;
+  padding:0; cursor:pointer; }
+/* nobody picked one yet: a dashed ring in the accent reads as somewhere to
+   press, where a grey emoji person reads as a picture that failed to load */
+.rt-face.empty{ border:1.5px dashed var(--accent,#e11d2e); background:transparent; }
+.rt-face-add{ font-size:19px; font-weight:700; line-height:1; color:var(--accent,#e11d2e); }
 .rt-face img{ width:100%; height:100%; object-fit:cover; object-position:top center; display:block; }
 .rt-who{ font-size:17px; font-weight:800; color:var(--t-text,#f2f2f5); margin-right:auto; }
 .rt-chip{ font-size:12.5px; font-weight:800; padding:5px 11px; border-radius:99px;
@@ -8116,7 +8121,10 @@ function partCounts(day, part) {
     total++;
     if (rec.tasks[t.id]) done++;
   });
-  if (!part || part.cats.indexOf('tidy') !== -1) {
+  // the room tidy is a weekend job: completion() has always scored it only at
+  // the weekend, so count it the same way or the chip promises work that is
+  // not on the page
+  if (isWeekend && (!part || part.cats.indexOf('tidy') !== -1)) {
     ['floor', 'desk', 'bed', 'sweepMop'].forEach(k => { total++; if (rec.tidy && rec.tidy[k]) done++; });
   }
   return { done, total };
@@ -8155,6 +8163,7 @@ function editorHTML(day) {
     const upcoming = DEADLINE_GROUPS.map(([g, label]) => {
       const at = deadlineAt(g, dt);
       if (!at || now > at) return null;
+      if (g === 'tidy' && !isWeekend) return null;     // hidden today
       const open = g === 'tidy'
         ? ['floor', 'desk', 'bed', 'sweepMop'].some(k => !(rec.tidy || {})[k])
         : dailyTasks.some(t => t.cat === g && (!t.schoolOnly || dayState.school) && (!t.weekendOnly || isWeekend) && !rec.tasks[t.id]);
@@ -8168,6 +8177,10 @@ function editorHTML(day) {
 
   function renderCategory(catName, icon, catFilter, badgeText = '') {
     const list = dailyTasks.filter(t => t.cat === catFilter && (!t.schoolOnly || dayState.school) && (!t.weekendOnly || isWeekend));
+    // nothing to do today means no heading either: a title with an empty list
+    // under it reads as something broken, and on a weekday every laundry task
+    // is filtered out
+    if (!list.length) return '';
     return `
       <div class="cat-title">
         <span>${icon}</span> ${catName}
@@ -8189,10 +8202,33 @@ function editorHTML(day) {
   const eveningHTML = renderCategory('Evening Hygiene Routine', '🌙', 'evening');
   const weeklyHTML = renderCategory('Weekly Sidework & Goals', '⭐', 'weekly');
 
+  /* The room tidy is a weekend job — the badge always said so, but the four
+     checkboxes turned up every day of the week regardless, and completion()
+     never scored them on a weekday. Now the section matches the scoring. */
   const tidyFloor = rec.tidy?.floor || false;
   const tidyDesk = rec.tidy?.desk || false;
   const tidyBed = rec.tidy?.bed || false;
   const tidySweepMop = rec.tidy?.sweepMop || false;
+
+  const tidyRow = (label, key, on) => `
+          <div class="sub-item">
+            <span>${label}${on && !rec.excused && rec.late && rec.late['tidy:' + key] ? '<span class="dl-chip late">late · 0 pts</span>' : ''}</span>
+            <input type="checkbox" ${on ? 'checked' : ''} ${dis} onchange="setTidy(${day},'${key}',this.checked)">
+          </div>`;
+
+  const tidyHTML = !isWeekend ? '' : `
+      <div class="sub-checklist" style="margin-top:14px; background:linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border:2px solid #3b82f6;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <h4 style="margin:0; color:#1e40af; font-size:16px;">🧹 Tidy Room & Floor Care${(() => { const at = deadlineAt('tidy', dt); return at ? `<span class="dl-chip">by ${fmtDeadline(at)}</span>` : ''; })()}</h4>
+          <span style="font-size:11px; font-weight:800; background:#2563eb; color:#ffffff; padding:4px 10px; border-radius:12px;">🌟 WEEKEND TARGET</span>
+        </div>
+        <div class="sub-grid">
+          ${tidyRow('🛋️ Nothing on floor', 'floor', tidyFloor)}
+          ${tidyRow('🧼 Clean desk', 'desk', tidyDesk)}
+          ${tidyRow('🛏️ Bed tidy', 'bed', tidyBed)}
+          ${tidyRow('🧹 Sweep & mop bedroom', 'sweepMop', tidySweepMop)}
+        </div>
+      </div>`;
 
   const timetableHelper = renderTimetableHelper(dayOfWeek, dt);
 
@@ -8204,7 +8240,10 @@ function editorHTML(day) {
 
   const topStrip = `
     <div class="rt-top">
-      <span class="rt-face">${av ? `<img src="${av.face}" alt="">` : '🧍'}</span>
+      <button type="button" class="rt-face${av ? '' : ' empty'}" onclick="openAvatarPicker()"
+        title="${av ? 'Change your character' : 'Pick your character'}"
+        aria-label="${av ? escapeHTML(av.name) + ' — change your character' : 'Pick your character'}"
+        >${av ? `<img src="${av.face}" alt="">` : '<span class="rt-face-add">+</span>'}</button>
       <b class="rt-who">${escapeHTML(who || 'Today')}</b>
       <span class="rt-chip">✓ ${whole.done}/${whole.total}</span>
       <span class="rt-chip star">⭐ ${points.toLocaleString()}</span>
@@ -8244,35 +8283,7 @@ function editorHTML(day) {
       </div>
 
       <div class="rt-part" data-part="chores">
-
-      <!-- Room Tidy Sub-Checklist (Scheduled for Weekend) -->
-      <div class="sub-checklist" style="margin-top:14px; ${isWeekend ? 'background:linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border:2px solid #3b82f6;' : ''}">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <h4 style="margin:0; ${isWeekend ? 'color:#1e40af; font-size:16px;' : ''}">🧹 Tidy Room & Floor Care${(() => { const at = deadlineAt('tidy', dt); return at ? `<span class="dl-chip">by ${fmtDeadline(at)}</span>` : ''; })()}</h4>
-          <span style="font-size:11px; font-weight:800; background:${isWeekend ? '#2563eb' : '#e0f2fe'}; color:${isWeekend ? '#ffffff' : '#0284c7'}; padding:4px 10px; border-radius:12px;">
-            ${isWeekend ? '🌟 WEEKEND TARGET' : '🗓️ Scheduled for Weekend'}
-          </span>
-        </div>
-        <div class="sub-grid">
-          <div class="sub-item">
-            <span>🛋️ Nothing on floor${tidyFloor && !rec.excused && rec.late && rec.late['tidy:floor'] ? '<span class="dl-chip late">late · 0 pts</span>' : ''}</span>
-            <input type="checkbox" ${tidyFloor ? 'checked' : ''} ${dis} onchange="setTidy(${day},'floor',this.checked)">
-          </div>
-          <div class="sub-item">
-            <span>🧼 Clean desk${tidyDesk && !rec.excused && rec.late && rec.late['tidy:desk'] ? '<span class="dl-chip late">late · 0 pts</span>' : ''}</span>
-            <input type="checkbox" ${tidyDesk ? 'checked' : ''} ${dis} onchange="setTidy(${day},'desk',this.checked)">
-          </div>
-          <div class="sub-item">
-            <span>🛏️ Bed tidy${tidyBed && !rec.excused && rec.late && rec.late['tidy:bed'] ? '<span class="dl-chip late">late · 0 pts</span>' : ''}</span>
-            <input type="checkbox" ${tidyBed ? 'checked' : ''} ${dis} onchange="setTidy(${day},'bed',this.checked)">
-          </div>
-          <div class="sub-item">
-            <span>🧹 Sweep & mop bedroom${tidySweepMop && !rec.excused && rec.late && rec.late['tidy:sweepMop'] ? '<span class="dl-chip late">late · 0 pts</span>' : ''}</span>
-            <input type="checkbox" ${tidySweepMop ? 'checked' : ''} ${dis} onchange="setTidy(${day},'sweepMop',this.checked)">
-          </div>
-        </div>
-      </div>
-
+      ${tidyHTML}
       ${laundryHTML}
       ${weeklyHTML}
       </div>
