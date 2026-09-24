@@ -12244,7 +12244,7 @@ function nextTourStep() {
   const target = step.el.split(',').map(sel => document.querySelector(sel.trim())).find(el => el && el.getBoundingClientRect().width > 0);
   const ring = document.getElementById('tourRing');
   if (!ring) return;
-  if (!target) { ring.hidden = true; return; }
+  if (!target) { ring.hidden = true; tourTarget = null; return; }
   target.scrollIntoView({ block: 'center', behavior: 'smooth' });
 
   /* Wait for the smooth scroll to actually stop before measuring. A fixed
@@ -12264,25 +12264,81 @@ function nextTourStep() {
       last = r.top;
       return requestAnimationFrame(() => setTimeout(place, 40));
     }
-    /* Ring only what is on screen. The calendar is taller than a phone, so
-       ringing the whole thing put most of the highlight past the bottom edge
-       where nobody can see it. */
-    const pad = 6, edge = 6;
-    const l = Math.max(edge, r.left - pad);
-    const t = Math.max(edge, r.top - pad);
-    const right  = Math.min(window.innerWidth  - edge, r.right  + pad);
-    const bottom = Math.min(window.innerHeight - edge, r.bottom + pad);
-    ring.hidden = false;
-    ring.style.left = l + 'px';
-    ring.style.top = t + 'px';
-    ring.style.width = Math.max(0, right - l) + 'px';
-    ring.style.height = Math.max(0, bottom - t) + 'px';
+    tourTarget = target;
+    paintTourRing();
+    watchTourRing();
   };
   place();
 }
 
+/* The ring is drawn in viewport coordinates, so anything that moves the page
+   under it leaves it behind — a parent scrolling to see what is being pointed
+   at, a late layout shift, or on a phone the address bar sliding away, which
+   changes innerHeight and shifts everything fixed. It used to be positioned
+   once and then never again, which is why the highlight drifted onto whatever
+   happened to be in that spot. Now it follows. */
+let tourTarget = null;
+let tourRingQueued = false;
+
+function paintTourRing() {
+  const ring = document.getElementById('tourRing');
+  if (!ring || !tourTarget) return;
+  if (!tourTarget.isConnected) { ring.hidden = true; return; }
+  const r = tourTarget.getBoundingClientRect();
+  if (!r.width && !r.height) { ring.hidden = true; return; }
+
+  /* Ring only what is on screen. The calendar is taller than a phone, so
+     ringing the whole thing put most of the highlight past the bottom edge
+     where nobody can see it. */
+  const pad = 6, edge = 6;
+  const l = Math.max(edge, r.left - pad);
+  const t = Math.max(edge, r.top - pad);
+  const right  = Math.min(window.innerWidth  - edge, r.right  + pad);
+  const bottom = Math.min(window.innerHeight - edge, r.bottom + pad);
+  const w = Math.max(0, right - l), h = Math.max(0, bottom - t);
+
+  // scrolled clean off: hide rather than pin a stripe to the edge
+  if (w < 8 || h < 8) { ring.hidden = true; return; }
+  ring.hidden = false;
+  ring.style.left = l + 'px';
+  ring.style.top = t + 'px';
+  ring.style.width = w + 'px';
+  ring.style.height = h + 'px';
+}
+
+function queueTourRing() {
+  if (tourRingQueued) return;
+  tourRingQueued = true;
+  requestAnimationFrame(() => { tourRingQueued = false; paintTourRing(); });
+}
+
+function watchTourRing() {
+  if (watchTourRing.on) return;
+  watchTourRing.on = true;
+  // capture, so a scroll inside any panel counts, not just the window
+  window.addEventListener('scroll', queueTourRing, { capture: true, passive: true });
+  window.addEventListener('resize', queueTourRing, { passive: true });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', queueTourRing);
+    window.visualViewport.addEventListener('scroll', queueTourRing);
+  }
+}
+
+function unwatchTourRing() {
+  if (!watchTourRing.on) return;
+  watchTourRing.on = false;
+  window.removeEventListener('scroll', queueTourRing, { capture: true });
+  window.removeEventListener('resize', queueTourRing);
+  if (window.visualViewport) {
+    window.visualViewport.removeEventListener('resize', queueTourRing);
+    window.visualViewport.removeEventListener('scroll', queueTourRing);
+  }
+  tourTarget = null;
+}
+
 function skipTour() { endTour(); }
 function endTour() {
+  unwatchTourRing();
   const layer = document.getElementById('tourLayer');
   if (layer) layer.hidden = true;
   markTourDone();
