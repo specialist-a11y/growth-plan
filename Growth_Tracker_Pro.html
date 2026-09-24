@@ -4207,6 +4207,24 @@ body.demo-on #appSidebar{ top:var(--demo-bar-h,46px) !important; height:calc(100
 .auth-view label{ font-weight:700; font-size:13px; }
 .auth-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 .auth-submit{ width:100%; }
+
+/* ===== SIGNING UP, ONE SCREEN AT A TIME =====
+   A parent meeting nine fields at once is reading a form, not starting
+   something. Each screen asks one thing and says why. */
+.su-bar{ height:4px; border-radius:99px; background:var(--t-panel-2,#1b1b21); overflow:hidden; }
+.su-bar i{ display:block; height:100%; width:20%; border-radius:99px;
+  background:linear-gradient(90deg,var(--accent-2,#ff5c6b),var(--accent,#e11d2e)); transition:width .28s ease; }
+.su-count{ font-family:var(--mono,ui-monospace,monospace); font-size:10.5px; font-weight:700; letter-spacing:.11em;
+  text-transform:uppercase; color:var(--t-muted,#8d8d99); margin-top:-4px; }
+.su-step{ display:flex; flex-direction:column; gap:12px; }
+.su-head{ margin:0; font-size:19px; line-height:1.25; color:var(--t-text,#f2f2f5); text-wrap:balance; }
+.su-sub{ margin:-6px 0 0; font-size:13.5px; line-height:1.5; color:var(--t-muted,#8d8d99); }
+.su-nav{ display:flex; gap:10px; margin-top:4px; }
+/* .action sets flex:0 0 auto and width:auto with !important, so the primary
+   button needs the same weight or it sits a third of the way across */
+.su-nav .su-back{ flex:0 0 auto !important; justify-content:center !important; }
+.su-nav .su-go{ flex:1 1 auto !important; width:auto !important; justify-content:center !important; }
+@media (prefers-reduced-motion: reduce){ .su-bar i{ transition:none; } }
 .auth-links{ display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px 16px; }
 .link-btn{ background:none; border:0; padding:4px 0; color:var(--accent); font:inherit; font-size:13.5px; font-weight:700; cursor:pointer; text-decoration:underline; text-underline-offset:3px; align-self:flex-start; }
 .auth-tab:focus-visible, .link-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
@@ -5508,12 +5526,22 @@ body.theme-sportscar .hero::after {
       </div>
 
       <div id="authSignUp" class="auth-view" hidden>
-        <div class="meta">One account per child. Once you're signed in, everything backs up automatically.</div>
-        <div>
-          <label for="signupEmail">Parent's email</label>
+        <!-- One question at a time. The old form asked nine things on one
+             screen, which reads as paperwork; a parent abandons it before
+             they have seen what the app does. -->
+        <div class="su-bar" role="progressbar" aria-valuemin="1" aria-valuemax="5" aria-valuenow="1" id="suBar"><i id="suBarFill"></i></div>
+        <div class="su-count" id="suCount">Step 1 of 5</div>
+
+        <div class="su-step" data-su="0">
+          <h3 class="su-head">Let&rsquo;s start with your email</h3>
+          <p class="su-sub">The parent or guardian&rsquo;s address — it is what the account belongs to.</p>
+          <label for="signupEmail">Parent&rsquo;s email</label>
           <input id="signupEmail" type="email" autocomplete="email" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="name@gmail.com" />
         </div>
-        <div class="auth-grid">
+
+        <div class="su-step" data-su="1" hidden>
+          <h3 class="su-head">Pick a password</h3>
+          <p class="su-sub">Eight characters or more. Your child never needs this one.</p>
           <div>
             <label for="signupPassword">Password</label>
             <input id="signupPassword" type="password" autocomplete="new-password" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="8+ characters" />
@@ -5523,37 +5551,50 @@ body.theme-sportscar .hero::after {
             <input id="signupPassword2" type="password" autocomplete="new-password" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="Type it again" />
           </div>
         </div>
-        <div class="auth-grid">
+
+        <div class="su-step" data-su="2" hidden>
+          <h3 class="su-head">Who is setting this up?</h3>
+          <p class="su-sub">Both of these are optional — they only shape how the app talks to you.</p>
           <div>
-            <label for="signupChildName">Child's name</label>
-            <input id="signupChildName" type="text" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="e.g. Jayden" />
-          </div>
-          <div>
-            <label for="signupParentName">Parent's name</label>
+            <label for="signupParentName">Your name</label>
             <input id="signupParentName" type="text" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="e.g. Katrina" />
           </div>
-        </div>
-        <div class="auth-grid">
           <div>
             <label for="signupCountry">Country</label>
             <select id="signupCountry" data-country-select style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;"></select>
           </div>
+        </div>
+
+        <div class="su-step" data-su="3" hidden>
+          <h3 class="su-head">Now tell me about your child</h3>
+          <p class="su-sub">One account per child. You can add up to three more later.</p>
           <div>
-            <label for="signupChildAge">Child's age</label>
+            <label for="signupChildName">Child&rsquo;s name</label>
+            <input id="signupChildName" type="text" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="e.g. Jayden" />
+          </div>
+          <div>
+            <label for="signupChildAge">Child&rsquo;s age</label>
             <select id="signupChildAge" data-age-select style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;"></select>
           </div>
         </div>
-        <div class="auth-grid">
+
+        <div class="su-step" data-su="4" hidden>
+          <h3 class="su-head">Last thing: a PIN that is yours</h3>
+          <p class="su-sub">It opens the Parent Dashboard, where rewards, deadlines and the routine live. Do not tell your child.</p>
           <div>
-            <label for="signupParentPin">Parent PIN <span style="font-weight:500; color:var(--muted)">— opens the Parent Dashboard</span></label>
-            <input id="signupParentPin" type="password" inputmode="numeric" maxlength="8" autocomplete="off" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="4–8 digits" />
+            <label for="signupParentPin">Parent PIN</label>
+            <input id="signupParentPin" type="password" inputmode="numeric" maxlength="8" autocomplete="off" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="4\u20138 digits" />
           </div>
           <div>
             <label for="signupParentPin2">Confirm PIN</label>
             <input id="signupParentPin2" type="password" inputmode="numeric" maxlength="8" autocomplete="off" style="width:100%; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:4px;" placeholder="Type it again" />
           </div>
         </div>
-        <button class="action primary auth-submit" onclick="signUp()">Create account</button>
+
+        <div class="su-nav">
+          <button type="button" class="action ghost su-back" id="suBack" onclick="signupBack()" hidden>Back</button>
+          <button type="button" class="action primary su-go" id="suNext" onclick="signupNext()">Continue</button>
+        </div>
       </div>
 
       <div id="authForgot" class="auth-view" hidden>
@@ -6993,6 +7034,80 @@ function updateAuthUI() {
   maybeOfferDeviceImport();
 }
 
+/* ===== SIGNING UP, ONE SCREEN AT A TIME =====
+   Each step validates before it will let anyone past, so a mistake is caught
+   next to the field that caused it rather than at the end of a long form. */
+const SIGNUP_LAST = 4;
+let signupAt = 0;
+
+function signupStepValid(i) {
+  const v = id => (document.getElementById(id)?.value || '').trim();
+  if (i === 0) {
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v('signupEmail')))
+      return 'Enter a valid email address, like <b>name@gmail.com</b>.';
+  }
+  if (i === 1) {
+    const np = readNewPassword('signupPassword', 'signupPassword2');
+    if (np.error) return np.error;
+  }
+  if (i === 3 && !v('signupChildName')) return 'Enter your child\u2019s name.';
+  if (i === SIGNUP_LAST) {
+    const pin = readNewPin('signupParentPin', 'signupParentPin2');
+    if (pin.error) return pin.error + ' The PIN opens the Parent Dashboard.';
+  }
+  return null;
+}
+
+function renderSignupStep() {
+  document.querySelectorAll('#authSignUp .su-step').forEach(el => {
+    el.hidden = Number(el.dataset.su) !== signupAt;
+  });
+  const fill = document.getElementById('suBarFill');
+  if (fill) fill.style.width = Math.round(((signupAt + 1) / (SIGNUP_LAST + 1)) * 100) + '%';
+  const bar = document.getElementById('suBar');
+  if (bar) bar.setAttribute('aria-valuenow', String(signupAt + 1));
+  const count = document.getElementById('suCount');
+  if (count) count.textContent = 'Step ' + (signupAt + 1) + ' of ' + (SIGNUP_LAST + 1);
+  const back = document.getElementById('suBack');
+  if (back) back.hidden = signupAt === 0;
+  const next = document.getElementById('suNext');
+  if (next) next.textContent = signupAt === SIGNUP_LAST ? 'Create account' : 'Continue';
+  // put the cursor where the question is
+  const first = document.querySelector('#authSignUp .su-step:not([hidden]) input, #authSignUp .su-step:not([hidden]) select');
+  if (first) setTimeout(() => { try { first.focus({ preventScroll: true }); } catch (e) {} }, 40);
+}
+
+function signupNext() {
+  const err = signupStepValid(signupAt);
+  // some of the shared validators already carry their own warning sign
+  if (err) return authMsg(/^\u26a0/.test(err) ? err : '\u26a0\ufe0f ' + err);
+  const m = document.getElementById('authMessage');
+  if (m) m.style.display = 'none';
+  if (signupAt === SIGNUP_LAST) return signUp();
+  signupAt++;
+  renderSignupStep();
+}
+
+function signupBack() {
+  if (signupAt === 0) return;
+  signupAt--;
+  const m = document.getElementById('authMessage');
+  if (m) m.style.display = 'none';
+  renderSignupStep();
+}
+
+function resetSignupSteps() { signupAt = 0; renderSignupStep(); }
+
+// Enter moves on, the way it would in a one-field form
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const box = document.getElementById('authSignUp');
+  if (!box || box.hidden || !box.contains(e.target)) return;
+  if (e.target.tagName === 'TEXTAREA') return;
+  e.preventDefault();
+  signupNext();
+});
+
 var authView = 'signin';
 function showAuthView(view, keepMsg) {
   authView = view || 'signin';
@@ -7009,6 +7124,7 @@ function showAuthView(view, keepMsg) {
     if (re && !re.value) re.value = (cloudSession() && session.user.email) || (ae && ae.value.trim()) || '';
     if (!keepMsg) { const step2 = document.getElementById('resetStep2'); if (step2) step2.hidden = true; }
   }
+  if (authView === 'signup' && typeof resetSignupSteps === 'function') resetSignupSteps();
   if (!keepMsg) { const m = document.getElementById('authMessage'); if (m) m.style.display = 'none'; }
   updateAuthBoxVisibility();
 }
