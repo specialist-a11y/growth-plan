@@ -3705,6 +3705,44 @@ h1,h2,h3,h4,.sidebar-brand-title,.stat-val,.hero h1{ font-family:Inter,-apple-sy
 #avatarBuddyImg{ animation:avatarIdle 4.5s ease-in-out infinite; transform-origin:50% 100%;
   filter:drop-shadow(0 14px 18px rgba(0,0,0,.55)); will-change:transform; }
 #avatarBuddyImg.cheer{ animation:avatarCheer .85s cubic-bezier(.34,1.56,.64,1); }
+
+/* ===== A CHARACTER THAT ANSWERS BACK =====
+   Each mood is a light touch — a glow and a change of pace, never a new
+   drawing. Nothing here droops: the worst day gets a warmer welcome, not a
+   sadder face. */
+#avatarBuddyImg.mood-perfect{ animation:avatarCheer 1.1s cubic-bezier(.34,1.56,.64,1) infinite;
+  filter:drop-shadow(0 0 14px rgba(255,199,60,.75)) drop-shadow(0 4px 12px rgba(0,0,0,.45)); }
+#avatarBuddyImg.mood-nearly{ animation:avatarIdle 2.6s ease-in-out infinite;
+  filter:drop-shadow(0 0 10px rgba(255,214,102,.5)); }
+#avatarBuddyImg.mood-going{ animation:avatarIdle 3.4s ease-in-out infinite;
+  filter:drop-shadow(0 0 8px rgba(120,200,255,.4)); }
+#avatarBuddyImg.mood-started{ animation:avatarIdle 4.2s ease-in-out infinite; }
+#avatarBuddyImg.mood-ready{ animation:avatarIdle 5.6s ease-in-out infinite; opacity:.93; }
+#avatarBuddyImg.mood-welcome{ animation:avatarWave 3.2s ease-in-out infinite;
+  filter:drop-shadow(0 0 9px rgba(255,140,120,.35)); }
+
+@keyframes avatarWave{
+  0%,100%{ transform:translateY(0) rotate(0deg); }
+  8%     { transform:translateY(-3px) rotate(-2.5deg); }
+  16%    { transform:translateY(-3px) rotate(2.5deg); }
+  24%    { transform:translateY(0) rotate(0deg); }
+}
+
+.mood-say{ margin-top:9px; display:flex; flex-direction:column; align-items:center; gap:5px; }
+.mood-line{ display:inline-block; position:relative; max-width:90%;
+  background:var(--t-panel-2,#1b1b21); border:1px solid var(--t-line,#26262e); border-radius:14px;
+  padding:7px 13px; font-size:12.5px; font-weight:600; line-height:1.4; color:var(--t-text,#f2f2f5); }
+/* the little tail that makes it read as the character talking */
+.mood-line::before{ content:""; position:absolute; top:-5px; left:50%; margin-left:-5px;
+  width:9px; height:9px; background:var(--t-panel-2,#1b1b21);
+  border-left:1px solid var(--t-line,#26262e); border-top:1px solid var(--t-line,#26262e);
+  transform:rotate(45deg); }
+.mood-streak{ font-size:11px; font-weight:800; letter-spacing:.03em; color:#ffc73c; }
+
+@media (prefers-reduced-motion: reduce){
+  #avatarBuddyImg.mood-perfect, #avatarBuddyImg.mood-nearly, #avatarBuddyImg.mood-going,
+  #avatarBuddyImg.mood-started, #avatarBuddyImg.mood-ready, #avatarBuddyImg.mood-welcome{ animation:none !important; }
+}
 .avatar-card:hover img{ animation:avatarIdle 3.2s ease-in-out infinite; }
 @media (prefers-reduced-motion:reduce){
   #avatarBuddyImg, #avatarBuddyImg.cheer, .avatar-card:hover img{ animation:none !important; }
@@ -5262,6 +5300,7 @@ body.theme-sportscar .hero::after {
         <div class="ms-stage"><img id="avatarBuddyImg" alt="" style="display:none; width:100%; max-width:190px; margin:0 auto;" /></div>
         <div id="avatarBuddyName" style="font-weight:800; font-size:15px; color:#fff; margin-top:8px;">Pick your character</div>
         <div id="avatarBuddyTag" style="font-size:12px; color:var(--t-muted,#8d8d99); margin-top:2px;">Choose an avatar to represent you</div>
+        <div id="avatarMoodSay" class="mood-say" hidden></div>
         <button class="action ghost" style="width:100%; margin-top:12px;" onclick="openAvatarPicker()">🧍 Choose Avatar</button>
         <div class="ms-head">
           <span>Marks</span>
@@ -8433,6 +8472,7 @@ function setTask(day, taskId, val) {
   recordTick(day, taskId, val);
   queueSave();
   refreshEditors(day);
+  if (typeof renderAvatarMood === 'function') renderAvatarMood();
 }
 
 function setTidy(day, item, val) {
@@ -8442,6 +8482,7 @@ function setTidy(day, item, val) {
   recordTick(day, 'tidy:' + item, val);
   queueSave();
   refreshEditors(day);
+  if (typeof renderAvatarMood === 'function') renderAvatarMood();
 }
 
 function setRating(day, r) {
@@ -11531,6 +11572,68 @@ function clearAvatar() {
   syncAvatarToCloud();
 }
 
+/* ===== A CHARACTER THAT ANSWERS BACK =====
+   A picture that never changes is wallpaper. This one reacts to the day the
+   child is actually having, which gives the avatar a reason to be looked at
+   and the child a reason to come back to it.
+
+   The one rule: it is never disappointed in them. A missed day is greeted,
+   not mourned — a character that sulks teaches a child to avoid the app on
+   exactly the day they most need to open it. */
+const AVATAR_MOODS = {
+  perfect: { cls: 'mood-perfect', lines: ['Every single thing. Look at you.', 'A clean sweep. That is the whole day.'] },
+  nearly:  { cls: 'mood-nearly',  lines: ['Almost the lot — one more.', 'So close you can see it.'] },
+  going:   { cls: 'mood-going',   lines: ['Past halfway.', 'Good rhythm today.'] },
+  started: { cls: 'mood-started', lines: ['Started. That is the hard part.', 'One down. Keep going.'] },
+  ready:   { cls: 'mood-ready',   lines: ['Ready when you are.', 'Whenever you are — no rush.'] },
+  welcome: { cls: 'mood-welcome', lines: ['Good to see you. Start with one thing.', 'Back again — pick any one to begin.'] }
+};
+
+function avatarMoodNow() {
+  const d = new Date();
+  const today = d.getDate();
+  let pct = 0, streak = 0, yesterdayDone = true;
+  try { pct = completion(today); } catch (e) {}
+  try { streak = (milestoneStats() || {}).currentStreak || 0; } catch (e) {}
+  try {
+    // "yesterday" only counts inside this month's grid; the 1st has no shame
+    if (today > 1) {
+      const y = getDay(today - 1);
+      yesterdayDone = completionFor(d.getFullYear(), d.getMonth() + 1, today - 1, y) > 0;
+    }
+  } catch (e) {}
+
+  let key;
+  if (pct >= 100) key = 'perfect';
+  else if (pct >= 80) key = 'nearly';
+  else if (pct >= 50) key = 'going';
+  else if (pct > 0) key = 'started';
+  else key = yesterdayDone ? 'ready' : 'welcome';
+
+  const mood = AVATAR_MOODS[key];
+  // the same day should not reword itself on every tick
+  const line = mood.lines[(today + key.length) % mood.lines.length];
+  const streakLine = streak >= 3 ? ('🔥 ' + streak + ' days running') : '';
+  return { key: key, cls: mood.cls, line: line, streak: streak, streakLine: streakLine, pct: pct };
+}
+
+function renderAvatarMood() {
+  const img = document.getElementById('avatarBuddyImg');
+  const say = document.getElementById('avatarMoodSay');
+  const a = typeof currentAvatar === 'function' ? currentAvatar() : null;
+  if (!a) { if (say) say.hidden = true; return; }
+  const m = avatarMoodNow();
+  if (img) {
+    Object.keys(AVATAR_MOODS).forEach(k => img.classList.remove(AVATAR_MOODS[k].cls));
+    img.classList.add(m.cls);
+  }
+  if (say) {
+    say.hidden = false;
+    say.innerHTML = '<span class="mood-line">' + escapeHTML(m.line) + '</span>' +
+      (m.streakLine ? '<span class="mood-streak">' + escapeHTML(m.streakLine) + '</span>' : '');
+  }
+}
+
 function renderAvatarUI() {
   const a = currentAvatar();
   const card = document.getElementById('avatarCard');
@@ -11549,6 +11652,7 @@ function renderAvatarUI() {
   if (qIco) qIco.innerHTML = a ? `<img src="${a.face}" alt="">` : '🧍';
   if (qLabel) qLabel.textContent = a ? a.name : 'Pick your character';
   if (typeof applyStoreCosmetics === 'function') applyStoreCosmetics();
+  renderAvatarMood();
 }
 
 /* ===== DEMO ACCOUNT =====
