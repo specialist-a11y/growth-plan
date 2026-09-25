@@ -4246,6 +4246,49 @@ body.demo-on #appSidebar{ top:var(--demo-bar-h,46px) !important; height:calc(100
 .auth-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 .auth-submit{ width:100%; }
 
+/* ===== FRIENDS ===== */
+.fr-note{ background:var(--t-panel-2,#1b1b21); border:1px solid var(--t-line,#26262e); border-radius:12px;
+  padding:13px 15px; font-size:13px; line-height:1.55; color:var(--t-muted,#8d8d99); margin-bottom:6px; }
+.fr-note b{ color:var(--t-text,#f2f2f5); }
+.fr-h{ font-size:14px; font-weight:800; margin:20px 0 4px; color:var(--t-text,#f2f2f5); }
+.fr-count{ color:var(--accent,#e11d2e); }
+.fr-code-row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.fr-code{ flex:1 1 140px; font-family:var(--mono,ui-monospace,monospace); font-size:19px; font-weight:700;
+  letter-spacing:.22em; text-align:center; padding:11px 14px; border-radius:12px;
+  background:var(--t-panel-2,#1b1b21); border:1px dashed var(--t-line-2,#3a3a44); color:var(--t-text,#f2f2f5); }
+.fr-list{ display:flex; flex-direction:column; gap:8px; }
+.fr-row{ display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap;
+  background:var(--t-panel,#14141a); border:1px solid var(--t-line,#26262e); border-radius:12px; padding:11px 13px; }
+.fr-who{ display:flex; flex-direction:column; gap:2px; min-width:min(100%,180px); flex:1 1 auto;
+  font-size:13.5px; color:var(--t-text,#f2f2f5); }
+.fr-sub{ font-size:12px; color:var(--t-muted,#8d8d99); line-height:1.45; }
+.fr-acts{ display:flex; gap:8px; flex:0 0 auto; }
+
+/* ===== THE BOARD ===== */
+#boardList{ display:flex; flex-direction:column; gap:9px; }
+.bd-row{ display:grid; grid-template-columns:auto auto 1fr auto auto; gap:10px; align-items:center;
+  background:var(--t-panel,#14141a); border:1px solid var(--t-line,#26262e); border-radius:14px; padding:11px 13px; }
+.bd-row.me{ border-color:var(--accent,#e11d2e); background:color-mix(in srgb, var(--accent,#e11d2e) 8%, var(--t-panel,#14141a)); }
+.bd-rank{ font-family:var(--mono,ui-monospace,monospace); font-size:13px; font-weight:700; color:var(--t-muted,#8d8d99);
+  width:20px; text-align:center; }
+.bd-face{ width:34px; height:34px; border-radius:50%; overflow:hidden; display:grid; place-items:center; font-size:17px;
+  background:var(--t-panel-2,#1b1b21); border:1px solid var(--t-line,#26262e); }
+.bd-face img{ width:100%; height:100%; object-fit:cover; object-position:top center; display:block; }
+.bd-name{ font-size:14.5px; font-weight:700; color:var(--t-text,#f2f2f5); min-width:0;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.bd-name em{ font-style:normal; font-weight:600; color:var(--t-muted,#8d8d99); }
+.bd-streak{ font-size:12px; font-weight:800; color:#ffc73c; }
+.bd-pct{ font-size:15px; font-weight:800; color:var(--t-text,#f2f2f5); font-variant-numeric:tabular-nums; }
+.bd-bar{ grid-column:1 / -1; height:5px; border-radius:99px; background:var(--t-panel-2,#1b1b21); overflow:hidden; }
+.bd-bar i{ display:block; height:100%; border-radius:99px;
+  background:linear-gradient(90deg,var(--accent-2,#ff5c6b),var(--accent,#e11d2e)); }
+.bd-row.me .bd-bar i{ background:linear-gradient(90deg,#ffc73c,var(--accent,#e11d2e)); }
+.bd-empty{ display:flex; flex-direction:column; gap:6px; padding:22px 18px; text-align:center;
+  background:var(--t-panel,#14141a); border:1px dashed var(--t-line-2,#3a3a44); border-radius:14px; }
+.bd-empty b{ font-size:15px; color:var(--t-text,#f2f2f5); }
+.bd-empty span{ font-size:13px; color:var(--t-muted,#8d8d99); line-height:1.5; }
+.bd-foot{ font-size:11.5px; color:var(--t-muted,#8d8d99); text-align:center; margin-top:4px; line-height:1.5; }
+
 /* ===== SIGNING UP, ONE SCREEN AT A TIME =====
    A parent meeting nine fields at once is reading a form, not starting
    something. Each screen asks one thing and says why. */
@@ -4518,6 +4561,10 @@ body.theme-sportscar .hero::after {
         <span class="sidebar-nav-item-icon">🛍️</span>
         <span>Store</span>
       </li>
+      <li class="sidebar-nav-item" onclick="switchMainTab('boardPanel', this)">
+        <span class="sidebar-nav-item-icon">👥</span>
+        <span>Friends</span>
+      </li>
       <li class="sidebar-nav-item" onclick="switchMainTab('analyticsPanel', this)">
         <span class="sidebar-nav-item-icon">📊</span>
         <span>Analytics & Trophies</span>
@@ -4774,6 +4821,18 @@ body.theme-sportscar .hero::after {
     </div>
   </section>
 
+  <!-- Friends leaderboard -->
+  <section id="boardPanel" class="panel">
+    <div class="section">
+      <h2>👥 Friends this week</h2>
+      <div class="meta" style="margin-bottom:12px;">
+        How much of your own routine you have finished this week, next to your friends&rsquo;.
+        Everyone is measured against their own list.
+      </div>
+      <div id="boardList"></div>
+    </div>
+  </section>
+
   <!-- Analytics & Trophies Panel -->
   <section id="analyticsPanel" class="panel">
     <div class="section">
@@ -4996,6 +5055,7 @@ body.theme-sportscar .hero::after {
         <button type="button" role="tab" data-sec="pgRewards" onclick="showParentSection('pgRewards')">🎁 Rewards</button>
         <button type="button" role="tab" data-sec="pgDeadlines" onclick="showParentSection('pgDeadlines')">⏰ Deadlines</button>
         <button type="button" role="tab" data-sec="pgSchool" onclick="showParentSection('pgSchool')">🏫 School</button>
+        <button type="button" role="tab" data-sec="pgFriends" onclick="showParentSection('pgFriends')">👥 Friends<span class="pd-badge" id="pgFriendBadge" hidden>0</span></button>
         <button type="button" role="tab" data-sec="pgSettings" onclick="showParentSection('pgSettings')">⚙️ Settings</button>
       </div>
       <button type="button" class="pd-arrow right" id="pdArrowR" onclick="scrollParentTabs(1)" aria-label="More sections">›</button>
@@ -5082,6 +5142,41 @@ body.theme-sportscar .hero::after {
 
       </details>
 
+
+      <details class="pd-group" id="pgFriends">
+        <summary>👥 Friends<span class="pd-hint">a leaderboard you both agree to</span></summary>
+
+        <div class="fr-note">
+          A friend&rsquo;s child sees your child&rsquo;s first name, their character and one
+          number: how much of <b>their own</b> routine they finished this week. Nothing
+          else ever crosses &mdash; no tasks, no rewards, no notes, no timetable.
+          <b>Both parents have to agree</b>, and either can end it at any time.
+        </div>
+
+        <h3 class="fr-h">Your child&rsquo;s code</h3>
+        <div class="meta" style="margin-bottom:8px;">Give this to the other child&rsquo;s parent. They type it in, then you both agree.</div>
+        <div class="fr-code-row">
+          <code class="fr-code" id="frMyCode">&mdash;</code>
+          <button class="action ghost" id="frCopyCode" onclick="copyFriendCode()">Copy</button>
+        </div>
+
+        <h3 class="fr-h">Add a friend</h3>
+        <div class="meta" style="margin-bottom:8px;">Type the code the other parent gave you. Their parent still has to agree before anything is shared.</div>
+        <div class="fr-code-row">
+          <input id="frEnterCode" type="text" maxlength="6" autocapitalize="characters" spellcheck="false"
+            placeholder="ABC123" style="flex:1; border:1px solid var(--border); border-radius:12px; padding:10px; text-transform:uppercase; letter-spacing:.12em; font-family:var(--mono,ui-monospace,monospace);" />
+          <button class="action primary" onclick="askFriend()">Ask</button>
+        </div>
+
+        <h3 class="fr-h">Waiting for you<span class="fr-count" id="frWaitCount"></span></h3>
+        <div id="frWaiting" class="fr-list"><div class="meta">Nothing waiting.</div></div>
+
+        <h3 class="fr-h">Asked, waiting for them</h3>
+        <div id="frSent" class="fr-list"><div class="meta">Nothing sent.</div></div>
+
+        <h3 class="fr-h">Friends</h3>
+        <div id="frFriends" class="fr-list"><div class="meta">No friends yet.</div></div>
+      </details>
 
       <details class="pd-group" id="pgSchool">
         <summary>🏫 School &amp; child<span class="pd-hint">timetable, name, age and country</span></summary>
@@ -5415,6 +5510,11 @@ body.theme-sportscar .hero::after {
       <button class="m-wide" onclick="goMore('rewardsVaultPanel')">
         <div class="ic">🎁</div>
         <div><strong>Reward Vault</strong><small>Rewards you claim, parents approve</small></div>
+        <span class="chev">›</span>
+      </button>
+      <button class="m-wide" onclick="goMore('boardPanel')">
+        <div class="ic">👥</div>
+        <div><strong>Friends</strong><small>This week, next to your friends</small></div>
         <span class="chev">›</span>
       </button>
       <button class="m-wide" onclick="goMore('analyticsPanel')">
@@ -7273,7 +7373,15 @@ async function saveRecoveredPassword() {
 async function loadCloud() {
   await resolveHousehold();   // whose rows to pull, before pulling any
   await loadChildren();       // and which child's
-  return pullFromCloud();     // the old single-month loader below is no longer reached
+  const pulled = pullFromCloud();
+  // the board comes after the data it is built from, and never blocks it
+  Promise.resolve(pulled).then(async () => {
+    await loadFriends();
+    await publishMyScore();
+    if (typeof renderFriends === 'function') renderFriends();
+    if (typeof renderBoard === 'function') renderBoard();
+  }).catch(() => {});
+  return pulled;
   if (!sb || !session) return;
   setCloud('Loading cloud data…');
   const monthKey = 'teen-' + currentMonth;
@@ -7289,6 +7397,15 @@ async function loadCloud() {
   } else {
     
 // --- PHOTO THEME CUSTOMIZATION SYSTEM ---
+
+function refreshBoardIfOpen(panelId) {
+  if (panelId !== 'boardPanel') return;
+  if (typeof renderBoard === 'function') renderBoard();
+  // a friend's number may have moved since the page loaded
+  if (typeof loadFriends === 'function') {
+    loadFriends().then(() => { publishMyScore(); renderBoard(); }).catch(() => {});
+  }
+}
 
 function switchMainTab(panelId, btnElem) {
   // walking away from the parent page locks it behind the PIN again
@@ -8956,6 +9073,15 @@ if (savedGuest) {
 
 // --- PHOTO THEME CUSTOMIZATION SYSTEM ---
 
+function refreshBoardIfOpen(panelId) {
+  if (panelId !== 'boardPanel') return;
+  if (typeof renderBoard === 'function') renderBoard();
+  // a friend's number may have moved since the page loaded
+  if (typeof loadFriends === 'function') {
+    loadFriends().then(() => { publishMyScore(); renderBoard(); }).catch(() => {});
+  }
+}
+
 function switchMainTab(panelId, btnElem) {
   // walking away from the parent page locks it behind the PIN again
   const leaving = document.getElementById('parentPanel');
@@ -8964,6 +9090,7 @@ function switchMainTab(panelId, btnElem) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   const target = document.getElementById(panelId);
   if (target) target.classList.add('active');
+  if (typeof refreshBoardIfOpen === 'function') refreshBoardIfOpen(panelId);
 
   document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.sidebar-nav-item').forEach(b => b.classList.remove('active'));
@@ -10486,6 +10613,8 @@ async function verifyParentPin(pin) {
 let parentUnlocked = false;
 
 function openParentDashboard() {
+  if (typeof renderFriends === 'function') renderFriends();
+  if (typeof loadFriends === 'function') loadFriends().then(() => renderFriends()).catch(() => {});
   const cfg = parentConfig();
   parentUnlocked = false;
   if (!parentFocusSection) parentSection = 'pgNow';
@@ -10888,7 +11017,7 @@ function downloadAllData() {
 /* The dashboard used to be one long page of collapsible groups: twelve phone
    screens before a parent had opened anything. Only one section is shown at a
    time now, so each is a screen or two. */
-const PARENT_SECTIONS = ['pgNow', 'pgRoutine', 'pgRewards', 'pgDeadlines', 'pgSchool', 'pgSettings'];
+const PARENT_SECTIONS = ['pgNow', 'pgRoutine', 'pgRewards', 'pgDeadlines', 'pgSchool', 'pgFriends', 'pgSettings'];
 let parentSection = 'pgNow';
 
 /* The fade at the edge of the tab bar means "there is more this way". It has
@@ -12447,6 +12576,223 @@ function endTour() {
   if (layer) layer.hidden = true;
   markTourDone();
   tourAt = -1;
+}
+
+/* ===== FRIENDS =====
+   A leaderboard between two households, gated by both parents.
+
+   Ranking is share of your own routine, never points. A twelve-year-old with
+   six tasks and a sixteen-year-old with twenty are each measured against
+   themselves; ranking by points would mean the longest list always wins,
+   which is a reason to quit rather than carry on.
+
+   What leaves the house is a first name, a character and a number out of 100.
+   The database enforces that — see supabase/04-friends.sql — this is only the
+   part a parent touches. */
+let friendLinks = [], friendScores = [], friendCode = '';
+
+// Monday-based week, the same way the weekly report counts one
+function weekKeyFor(d) {
+  const t = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const day = (t.getDay() + 6) % 7;             // Monday = 0
+  t.setDate(t.getDate() - day + 3);             // the Thursday of this week
+  const firstThu = new Date(t.getFullYear(), 0, 4);
+  const week = 1 + Math.round(((t - firstThu) / 86400000 - 3 + ((firstThu.getDay() + 6) % 7)) / 7);
+  return t.getFullYear() + '-W' + String(week).padStart(2, '0');
+}
+
+/* This week so far, as a share of what was actually asked of them. Days with
+   no record at all are skipped rather than counted as nothing — the same rule
+   the weekly email uses, because a family that was away has not failed. */
+function myWeekPct() {
+  const now = new Date();
+  const day = (now.getDay() + 6) % 7;
+  const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day);
+  let sum = 0, n = 0;
+  for (let i = 0; i <= day; i++) {
+    const d = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i);
+    if (d.getMonth() !== now.getMonth()) continue;      // this grid holds one month
+    const rec = getDay(d.getDate());
+    const touched = rec && ((rec.tasks && Object.keys(rec.tasks).length) || (rec.tidy && Object.keys(rec.tidy).length));
+    if (!touched) continue;
+    sum += completion(d.getDate()); n++;
+  }
+  return n ? Math.round(sum / n) : 0;
+}
+
+async function publishMyScore() {
+  if (!sb || !cloudSession() || !activeChildId || demoMode()) return;
+  try {
+    const name = (childDisplayName() || '').trim().split(/\s+/)[0] || 'Someone';
+    const st = milestoneStats() || {};
+    await sb.from('friend_scores').upsert({
+      child_id: activeChildId, owner_id: dataOwnerId(), display_name: name,
+      avatar: selectedAvatar || null, week_key: weekKeyFor(new Date()),
+      pct: myWeekPct(), streak: st.currentStreak || 0, updated_at: new Date().toISOString()
+    }, { onConflict: 'child_id' });
+  } catch (e) { console.info('Score not published:', e.message); }
+}
+
+async function loadFriends() {
+  // signed out means there are genuinely none; a failed fetch does not, so
+  // only the first case clears what is already on the board
+  if (!sb || !cloudSession() || !activeChildId) {
+    friendLinks = []; friendScores = []; friendCode = '';
+    return;
+  }
+  try {
+    const code = await sb.rpc('my_friend_code', { p_child: activeChildId });
+    const links = await sb.from('friend_links').select('*');
+    const scores = await sb.from('friend_scores').select('child_id,display_name,avatar,week_key,pct,streak');
+    if (links.error) throw links.error;
+    if (scores.error) throw scores.error;
+    friendCode = (!code.error && code.data) || friendCode || '';
+    friendLinks = links.data || [];
+    friendScores = scores.data || [];
+  } catch (e) { console.info('Friends not loaded, keeping the last board:', e.message); }
+}
+
+function friendsWaitingOnMe() {
+  const mine = childrenList.map(c => c.id);
+  return friendLinks.filter(l => !l.b_ok && mine.indexOf(l.b_child) !== -1);
+}
+function friendsIAsked() {
+  const mine = childrenList.map(c => c.id);
+  return friendLinks.filter(l => !l.b_ok && mine.indexOf(l.a_child) !== -1);
+}
+function friendsAgreed() {
+  return friendLinks.filter(l => l.a_ok && l.b_ok);
+}
+function scoreFor(childId) {
+  return friendScores.find(s => s.child_id === childId) || null;
+}
+function otherChildOf(link) {
+  const mine = childrenList.map(c => c.id);
+  return mine.indexOf(link.a_child) !== -1 ? link.b_child : link.a_child;
+}
+
+// ---------------------------------------------------------------- the parent's side
+function renderFriends() {
+  const set = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
+  const codeEl = document.getElementById('frMyCode');
+  if (codeEl) codeEl.textContent = friendCode || '—';
+
+  const waiting = friendsWaitingOnMe();
+  const badge = document.getElementById('pgFriendBadge');
+  if (badge) { badge.hidden = waiting.length === 0; badge.textContent = String(waiting.length); }
+  const wc = document.getElementById('frWaitCount');
+  if (wc) wc.textContent = waiting.length ? ' · ' + waiting.length : '';
+
+  const nameOf = id => { const sc = scoreFor(id); return sc && sc.display_name ? sc.display_name : 'Their child'; };
+
+  set('frWaiting', waiting.length ? waiting.map(l => `
+    <div class="fr-row">
+      <div class="fr-who"><b>A friend&rsquo;s parent wants to connect</b>
+        <span class="fr-sub">Their child will see your child&rsquo;s first name, character and weekly percentage — nothing else.</span></div>
+      <div class="fr-acts">
+        <button class="action ghost tt-mini" onclick="declineFriend('${l.id}')">No</button>
+        <button class="action primary tt-mini" onclick="agreeFriend('${l.id}')">Agree</button>
+      </div>
+    </div>`).join('') : '<div class="meta">Nothing waiting.</div>');
+
+  const sent = friendsIAsked();
+  set('frSent', sent.length ? sent.map(l => `
+    <div class="fr-row">
+      <div class="fr-who"><b>Waiting for the other parent</b>
+        <span class="fr-sub">Nothing is shared either way until they agree.</span></div>
+      <div class="fr-acts"><button class="action ghost tt-mini" onclick="declineFriend('${l.id}')">Cancel</button></div>
+    </div>`).join('') : '<div class="meta">Nothing sent.</div>');
+
+  const agreed = friendsAgreed();
+  set('frFriends', agreed.length ? agreed.map(l => {
+    const other = otherChildOf(l);
+    return `<div class="fr-row">
+      <div class="fr-who"><b>${escapeHTML(nameOf(other))}</b>
+        <span class="fr-sub">Connected</span></div>
+      <div class="fr-acts"><button class="action ghost tt-mini" onclick="declineFriend('${l.id}')">Remove</button></div>
+    </div>`;
+  }).join('') : '<div class="meta">No friends yet.</div>');
+}
+
+function copyFriendCode() {
+  if (!friendCode) return;
+  try {
+    navigator.clipboard.writeText(friendCode);
+    if (typeof toast === 'function') toast('Code copied');
+  } catch (e) { alert('Your child\u2019s code is ' + friendCode); }
+}
+
+async function askFriend() {
+  const box = document.getElementById('frEnterCode');
+  const code = (box?.value || '').trim().toUpperCase();
+  if (code.length < 4) return alert('Type the six-character code the other parent gave you.');
+  if (!sb || !cloudSession()) return alert('Sign in first — friends need an account.');
+  if (!activeChildId) return alert('This needs a child on the account. Try again in a moment.');
+  try {
+    const { error } = await sb.rpc('request_friend', { p_child: activeChildId, p_code: code });
+    if (error) throw error;
+    if (box) box.value = '';
+    await loadFriends(); renderFriends();
+    alert('Asked. Nothing is shared until their parent agrees too.');
+  } catch (e) { alert(e.message || 'That did not work.'); }
+}
+
+async function agreeFriend(id) {
+  if (!confirm('Agree to this? Your child\u2019s first name, character and weekly percentage will be visible to that one friend. You can undo it at any time.')) return;
+  try {
+    const { error } = await sb.rpc('approve_friend', { p_link: id });
+    if (error) throw error;
+    await publishMyScore();
+    await loadFriends(); renderFriends(); renderBoard();
+  } catch (e) { alert(e.message || 'That did not work.'); }
+}
+
+async function declineFriend(id) {
+  if (!confirm('End this connection? Neither child will see the other any more.')) return;
+  try {
+    const { error } = await sb.from('friend_links').delete().eq('id', id);
+    if (error) throw error;
+    await loadFriends(); renderFriends(); renderBoard();
+  } catch (e) { alert(e.message || 'That did not work.'); }
+}
+
+// ---------------------------------------------------------------- the child's side
+function renderBoard() {
+  const el = document.getElementById('boardList');
+  if (!el) return;
+  const wk = weekKeyFor(new Date());
+  const agreed = friendsAgreed();
+
+  const rows = [{ me: true, name: (childDisplayName() || 'You').split(/\s+/)[0],
+                  avatar: selectedAvatar, pct: myWeekPct(),
+                  streak: (milestoneStats() || {}).currentStreak || 0 }];
+  agreed.forEach(l => {
+    const sc = scoreFor(otherChildOf(l));
+    // last week's number is not this week's: a friend who has not opened the
+    // app yet this week sits at zero rather than carrying their old score
+    if (sc) rows.push({ me: false, name: sc.display_name || 'Friend', avatar: sc.avatar,
+                        pct: sc.week_key === wk ? sc.pct : 0, streak: sc.week_key === wk ? sc.streak : 0 });
+  });
+  rows.sort((a, b) => b.pct - a.pct || a.name.localeCompare(b.name));
+
+  if (rows.length < 2) {
+    el.innerHTML = `<div class="bd-empty">
+      <b>No friends on the board yet.</b>
+      <span>Ask a parent to add one — they swap codes with your friend&rsquo;s parent, and you both have to be allowed.</span>
+    </div>`;
+    return;
+  }
+  el.innerHTML = rows.map((r, i) => {
+    const av = AVATARS.find(a => a.id === r.avatar);
+    return `<div class="bd-row${r.me ? ' me' : ''}">
+      <span class="bd-rank">${i + 1}</span>
+      <span class="bd-face">${av ? `<img src="${av.face}" alt="">` : '🙂'}</span>
+      <span class="bd-name">${escapeHTML(r.name)}${r.me ? ' <em>(you)</em>' : ''}</span>
+      ${r.streak >= 3 ? `<span class="bd-streak">🔥${r.streak}</span>` : ''}
+      <span class="bd-pct">${r.pct}%</span>
+      <span class="bd-bar"><i style="width:${Math.max(2, r.pct)}%"></i></span>
+    </div>`;
+  }).join('') + '<div class="bd-foot">Everyone is measured against their own routine, so a longer list is never an advantage.</div>';
 }
 
 /* ===== MILESTONES =====

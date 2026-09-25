@@ -34,7 +34,8 @@ OUT=supabase/run-all.sql
 HEADER
 
   for f in Supabase_Setup.sql supabase-profiles.sql \
-           supabase/01-emails.sql supabase/02-household.sql supabase/03-children.sql; do
+           supabase/01-emails.sql supabase/02-household.sql supabase/03-children.sql \
+           supabase/04-friends.sql; do
     echo ""
     echo "-- ############################################################################"
     echo "-- ## $f"

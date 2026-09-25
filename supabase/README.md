@@ -172,6 +172,47 @@ select count(*) from children;                              -- one per account w
 select count(*) from growth_months where child_id is null;  -- must be 0
 ```
 
+## A leaderboard between friends
+
+`04-friends.sql`. Run it after `03-children.sql`.
+
+**Both parents hold the gate.** One parent types the other child's six-character
+code; nothing at all is shared until the second parent agrees, in their own
+Parent Dashboard under Friends. Either can end it at any time.
+
+What crosses between households is a first name, a chosen character and one
+number out of 100. Never a task, a reward, a note, a timetable or an address —
+which is why scores live in `friend_scores` rather than being read out of
+`growth_months`. There is no query a friend can run that reaches real data.
+
+Rank is **share of your own routine**, never points. A twelve-year-old with six
+tasks and a sixteen-year-old with twenty are each measured against themselves;
+ranking by points would mean the longest list always wins, which is a reason to
+quit rather than carry on.
+
+- `friend_codes` — one stable code per child, readable only by that family
+- `friend_links` — `a_ok` is the parent who typed the code, `b_ok` the one who
+  has to agree. No insert policy at all: `request_friend()` is the only way in
+- `friend_scores` — the only thing that leaves the house, gated by `are_friends()`
+- Ten friends per child, enforced in `request_friend()`
+
+**Prove the gate from two accounts before anyone relies on it:**
+
+```sql
+-- family A
+select my_friend_code('<child id>');
+-- family B
+select request_friend('<their child id>', 'THATCODE');
+select count(*) from friend_scores;     -- still ONLY their own: the gate holds
+-- family A agrees
+select approve_friend('<link id>');
+-- either, now
+select display_name, pct from friend_scores;
+```
+
+The third line is the one that matters. A request nobody has agreed to must
+leak nothing.
+
 ## Changing the email provider
 
 Only `send()` in `functions/notify/index.ts` knows about Resend — it is one
